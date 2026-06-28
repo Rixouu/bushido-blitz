@@ -3,6 +3,8 @@ import {
   hud,
   hudRefs,
   loadingEl,
+  orientationLockButton,
+  orientationLockEl,
   pickLabel,
   rosterEl,
   screens,
@@ -18,6 +20,95 @@ import { F, G, makeEdge } from "./state.js";
 const STEP = 1 / 60;
 let acc = 0;
 let lastFrame = performance.now();
+let orientationLockRequest = null;
+
+function isMobileTouchDevice() {
+  return window.matchMedia("(pointer: coarse)").matches && navigator.maxTouchPoints > 0;
+}
+
+function isPortraitMobile() {
+  return isMobileTouchDevice() && window.matchMedia("(orientation: portrait)").matches;
+}
+
+function updateOrientationLockUi() {
+  if (!orientationLockEl) {
+    return;
+  }
+
+  const active = isPortraitMobile();
+  orientationLockEl.classList.toggle("hidden", !active);
+  orientationLockEl.setAttribute("aria-hidden", String(!active));
+}
+
+async function requestLandscapeLock() {
+  if (!isPortraitMobile()) {
+    updateOrientationLockUi();
+    return false;
+  }
+
+  if (orientationLockRequest) {
+    return orientationLockRequest;
+  }
+
+  orientationLockRequest = (async () => {
+    try {
+      if (document.fullscreenEnabled && !document.fullscreenElement) {
+        try {
+          await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+        } catch (error) {
+          console.debug("Fullscreen request skipped", error);
+        }
+      }
+
+      const lockOrientation = globalThis.screen?.orientation?.lock;
+      if (typeof lockOrientation === "function") {
+        try {
+          await lockOrientation.call(globalThis.screen.orientation, "landscape");
+        } catch (error) {
+          console.debug("Landscape lock unavailable", error);
+        }
+      }
+    } finally {
+      orientationLockRequest = null;
+      updateOrientationLockUi();
+    }
+
+    return !isPortraitMobile();
+  })();
+
+  return orientationLockRequest;
+}
+
+function bindOrientationLock() {
+  const refresh = () => updateOrientationLockUi();
+  const requestLock = () => {
+    if (!isPortraitMobile()) {
+      refresh();
+      return;
+    }
+
+    void requestLandscapeLock();
+  };
+
+  refresh();
+
+  if (!isMobileTouchDevice()) {
+    return;
+  }
+
+  orientationLockButton?.addEventListener("click", requestLock);
+  window.addEventListener("resize", refresh);
+  window.addEventListener("orientationchange", refresh);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      requestLock();
+    }
+  });
+  document.addEventListener("pointerdown", requestLock, { passive: true });
+  globalThis.screen?.orientation?.addEventListener?.("change", refresh);
+
+  void requestLandscapeLock();
+}
 
 function show(name) {
   G.screen = name;
@@ -119,7 +210,7 @@ function setupSources() {
   G.sources[1]?.dispose?.();
   G.sources[2]?.dispose?.();
 
-  const touchDevice = window.matchMedia("(pointer: coarse)").matches && navigator.maxTouchPoints > 0;
+  const touchDevice = isMobileTouchDevice();
 
   if (touchDevice && G.mode === "local") {
     G.sources[1] = new TouchSource(1);
@@ -611,6 +702,7 @@ function tick(now = performance.now()) {
 
 export function boot() {
   lastFrame = performance.now();
+  bindOrientationLock();
   bindUi();
   bindTouch();
   buildRoster();
