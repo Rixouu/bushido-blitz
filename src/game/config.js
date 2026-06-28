@@ -279,7 +279,7 @@ export const STAGES = [
   },
   {
     id: "moon",
-    name: "Moonlight Garden",
+    name: "Moon Garden",
     sky: 0x3b4458,
     ground: 0x2a3344,
     haze: 0x6b7c99,

@@ -519,6 +519,46 @@ function drive(player, dt) {
   fighter.update(dt, input, F[player === 1 ? 2 : 1]);
 }
 
+function resolveFighterSpacing() {
+  const fighters = [F[1], F[2]];
+  if (!fighters[0] || !fighters[1]) {
+    return;
+  }
+
+  const [left, right] = fighters[0].x <= fighters[1].x ? fighters : [fighters[1], fighters[0]];
+  const minGap = left.collisionRadius + right.collisionRadius;
+  const gap = right.x - left.x;
+  if (gap >= minGap) {
+    return;
+  }
+
+  const overlap = minGap - gap;
+  left.x -= overlap / 2;
+  right.x += overlap / 2;
+
+  left.x = Math.max(-CFG.arenaHalf, left.x);
+  right.x = Math.min(CFG.arenaHalf, right.x);
+
+  const correctedGap = right.x - left.x;
+  if (correctedGap >= minGap) {
+    return;
+  }
+
+  if (Math.abs(left.x + CFG.arenaHalf) < 0.001) {
+    right.x = Math.min(CFG.arenaHalf, left.x + minGap);
+    return;
+  }
+
+  if (Math.abs(right.x - CFG.arenaHalf) < 0.001) {
+    left.x = Math.max(-CFG.arenaHalf, right.x - minGap);
+    return;
+  }
+
+  const mid = (left.x + right.x) / 2;
+  left.x = mid - minGap / 2;
+  right.x = mid + minGap / 2;
+}
+
 function tick(now = performance.now()) {
   const dt = Math.min((now - lastFrame) / 1000, 0.05);
   lastFrame = now;
@@ -529,13 +569,7 @@ function tick(now = performance.now()) {
       if (G.round.phase === "live") {
         drive(1, STEP);
         drive(2, STEP);
-
-        const gap = Math.abs(F[1].x - F[2].x);
-        if (gap < 1.3) {
-          const mid = (F[1].x + F[2].x) / 2;
-          F[1].x = mid - 0.65;
-          F[2].x = mid + 0.65;
-        }
+        resolveFighterSpacing();
 
         F[1].x = Math.max(-CFG.arenaHalf, Math.min(CFG.arenaHalf, F[1].x));
         F[2].x = Math.max(-CFG.arenaHalf, Math.min(CFG.arenaHalf, F[2].x));

@@ -15,6 +15,7 @@ export function loadSheet(roster, anim) {
   const def = getAnimDef(roster, anim);
   const file = getAnimFile(roster, anim);
   const tex = texLoader.load(`${SPRITE_BASE}/${charId}/${file}.png`);
+  tex.colorSpace = THREE.SRGBColorSpace;
   tex.magFilter = THREE.NearestFilter;
   tex.minFilter = THREE.NearestFilter;
   tex.wrapS = THREE.RepeatWrapping;
@@ -43,6 +44,7 @@ export function makePlaceholder(emoji, tint) {
   ctx.fillText(emoji, 128, 70);
 
   const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
   tex.magFilter = THREE.NearestFilter;
   tex.minFilter = THREE.NearestFilter;
   return tex;

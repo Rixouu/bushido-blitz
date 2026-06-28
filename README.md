@@ -17,7 +17,7 @@
 ### Roster and stages
 
 - 12 playable fighters in `public/sprites/`, split across guard and runner animation profiles.
-- 4 playable stages: Stone Courtyard, Neon Dusk, Bamboo Sanctum, and Moonlight Garden.
+- 4 playable stages: Stone Courtyard, Neon Dusk, Bamboo Sanctum, and Moon Garden.
 - Each fighter has a distinct archetype, tint, and character blurb.
 
 ### Local and solo play

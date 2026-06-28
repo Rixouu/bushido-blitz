@@ -4,6 +4,24 @@ import { ASSET_MODE, CFG, FRAME_H, FRAME_W, getAnimDef, resolveAnimName } from "
 import { scene } from "./scene.js";
 import { loadSheet, makePlaceholder } from "./sprites.js";
 
+const DESKTOP_FIGHTER_VISUAL_BOOST = 1.32;
+const MOBILE_FIGHTER_VISUAL_BOOST = 1.38;
+const MOBILE_LANDSCAPE_FIGHTER_VISUAL_BOOST = 1.68;
+const FIGHTER_COLLISION_RADIUS = 0.64;
+const FIGHTER_COLLISION_SCALE_GAIN = 0.25;
+
+function getFighterVisualBoost() {
+  const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
+  const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+  if (isTouchDevice && isLandscape) {
+    return MOBILE_LANDSCAPE_FIGHTER_VISUAL_BOOST;
+  }
+  if (isTouchDevice) {
+    return MOBILE_FIGHTER_VISUAL_BOOST;
+  }
+  return DESKTOP_FIGHTER_VISUAL_BOOST;
+}
+
 export class Fighter {
   constructor(roster, facing, fx) {
     this.r = roster;
@@ -11,10 +29,16 @@ export class Fighter {
     this.fx = fx;
 
     this.placeholderTex = makePlaceholder(roster.emoji, roster.tint);
-    const material = new THREE.MeshBasicMaterial({ map: this.placeholderTex, transparent: true });
+    const material = new THREE.MeshBasicMaterial({
+      map: this.placeholderTex,
+      transparent: true,
+      toneMapped: false,
+    });
     const aspect = FRAME_H / FRAME_W;
     const planeHeight = 2.3 * aspect;
-    this.visualScale = this.r.visualScale || 1;
+    this.visualScale = (this.r.visualScale || 1) * getFighterVisualBoost();
+    this.collisionRadius =
+      FIGHTER_COLLISION_RADIUS + Math.max(0, this.visualScale - 1) * FIGHTER_COLLISION_SCALE_GAIN;
     this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.3, planeHeight), material);
     this.baseY = 1.85 + (planeHeight * (this.visualScale - 1)) / 2;
     this.groundOffset = 0;

@@ -1060,7 +1060,8 @@ h2.heading {
   padding-top: 0;
 }
 
-.btn.ghost.character-select__back {
+.btn.ghost.character-select__back,
+.btn.ghost.scene-select__back {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1087,19 +1088,155 @@ h2.heading {
   filter: sepia(1) saturate(7.8) hue-rotate(-28deg) brightness(0.9) contrast(1.08);
 }
 
-.btn.ghost.character-select__back:hover {
+.btn.ghost.character-select__back:hover,
+.btn.ghost.scene-select__back:hover {
   background: url("/elements/cta-back.png") center 52% / 122% auto no-repeat;
   background-color: transparent;
   box-shadow: none;
   filter: sepia(1) saturate(8.2) hue-rotate(-28deg) brightness(0.98) contrast(1.1);
 }
 
-.btn.ghost.character-select__back:active {
+.btn.ghost.character-select__back:active,
+.btn.ghost.scene-select__back:active {
   background: url("/elements/cta-back.png") center 52% / 122% auto no-repeat;
   background-color: transparent;
   box-shadow: none;
   transform: none;
   filter: sepia(1) saturate(7.6) hue-rotate(-28deg) brightness(0.86) contrast(1.08);
+}
+
+@media (min-width: 821px) and (pointer: fine) {
+  .character-select-screen::before {
+    background:
+      linear-gradient(180deg, rgb(9 7 6 / 12%) 0%, rgb(9 7 6 / 18%) 100%),
+      url("/elements/screen-background.png") center 47% / 122% auto no-repeat;
+    filter: blur(1.8px) brightness(0.65) saturate(0.86);
+    transform: scale(1.05);
+  }
+
+  .character-select__header {
+    margin-bottom: -4px;
+  }
+
+  .character-select__title {
+    width: min(680px, 48vw);
+    height: auto;
+    object-fit: contain;
+  }
+
+  .character-select__footer {
+    width: min(96vw, 980px);
+    margin-top: 10px;
+    padding-top: 8px;
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .btn.ghost.character-select__back {
+    width: 196px;
+    min-width: 196px;
+    min-height: 58px;
+    background: url("/elements/cta-back.png") center 54% / 94% auto no-repeat;
+    background-color: transparent;
+    overflow: visible;
+  }
+
+  .btn.ghost.character-select__back:hover {
+    background: url("/elements/cta-back.png") center 54% / 94% auto no-repeat;
+    background-color: transparent;
+  }
+
+  .btn.ghost.character-select__back:active {
+    background: url("/elements/cta-back.png") center 54% / 94% auto no-repeat;
+    background-color: transparent;
+  }
+
+  .btn.ghost.scene-select__back {
+    width: 196px;
+    min-width: 196px;
+    min-height: 58px;
+    background: url("/elements/cta-back.png") center 54% / 94% auto no-repeat;
+    background-color: transparent;
+    overflow: visible;
+  }
+
+  .btn.ghost.scene-select__back:hover {
+    background: url("/elements/cta-back.png") center 54% / 94% auto no-repeat;
+    background-color: transparent;
+  }
+
+  .btn.ghost.scene-select__back:active {
+    background: url("/elements/cta-back.png") center 54% / 94% auto no-repeat;
+    background-color: transparent;
+  }
+
+  .stage-card__nameplate {
+    align-items: flex-start;
+    padding: 0 7% 0;
+  }
+
+  .stage-card .stage-name {
+    font-size: clamp(11px, 0.88vw, 15px);
+    line-height: 0.92;
+    transform: translateY(-124%);
+  }
+
+  .stage-card__panel {
+    inset: 6.2% 6.7% 9.1%;
+    grid-template-rows: 77.5% 22.5%;
+  }
+
+  .stage-card__preview {
+    overflow: hidden;
+  }
+
+  .stage-card__image {
+    transform: scale(1.08);
+    transform-origin: center center;
+    object-fit: cover;
+    object-position: center 46%;
+  }
+
+  .stage-card--courtyard .stage-card__image {
+    transform: scale(1.1);
+    object-position: center 48%;
+  }
+
+  .stage-card--dusk .stage-card__image {
+    transform: scale(1.14);
+    object-position: center 42%;
+  }
+
+  .stage-card--bamboo .stage-card__image {
+    transform: scale(1.16);
+    object-position: center 38%;
+  }
+
+  .stage-card--moon .stage-card__image {
+    transform: scale(1.12);
+    object-position: center 41%;
+  }
+
+  .stage-card--crimson .stage-card__image {
+    transform: scale(1.13);
+    object-position: center 49%;
+  }
+
+  .stage-card--dojo .stage-card__image {
+    transform: scale(1.12);
+    object-position: center 40%;
+  }
+
+  .stage-card--temple .stage-card__image {
+    transform: scale(1.11);
+    object-position: center 45%;
+  }
+
+  .stage-card--market .stage-card__image {
+    transform: scale(1.14);
+    object-position: center 43%;
+  }
 }
 
 @media (max-width: 1080px) {
@@ -1377,16 +1514,116 @@ h2.heading {
   }
 
   .scene-select__header {
-    margin-bottom: 8px;
+    margin-bottom: -8px;
   }
 
   .scene-select__title {
-    width: min(36vw, 300px);
+    width: min(24vw, 190px);
   }
 
   .stages {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 6px;
+    column-gap: 0;
+    row-gap: 0;
+    width: min(82%, 700px);
+    margin-inline: auto;
+  }
+
+  .stage-card {
+    width: 88%;
+    aspect-ratio: 1.42 / 1;
+    justify-self: center;
+  }
+
+  .stage-card:nth-child(n + 5) {
+    margin-top: -16px;
+  }
+
+  .stage-card__panel {
+    inset: 7.2% 7.8% 9.2%;
+    grid-template-rows: 64% 36%;
+  }
+
+  .stage-card__preview {
+    overflow: hidden;
+  }
+
+  .stage-card__image {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    margin-top: 0;
+    margin-left: 0;
+    transform: scale(1.12);
+    transform-origin: center center;
+    object-fit: cover;
+    object-position: center 44%;
+  }
+
+  .stage-card__nameplate {
+    align-items: flex-start;
+    padding: 0 6% 0;
+  }
+
+  .stage-card .stage-name {
+    font-size: 8px;
+    line-height: 0.88;
+    transform: translateY(-86%);
+  }
+
+  .stage-card--courtyard .stage-card__image {
+    transform: scale(1.12);
+    object-position: center 46%;
+  }
+
+  .stage-card--dusk .stage-card__image {
+    transform: scale(1.16);
+    object-position: center 40%;
+  }
+
+  .stage-card--bamboo .stage-card__image {
+    transform: scale(1.18);
+    object-position: center 38%;
+  }
+
+  .stage-card--moon .stage-card__image {
+    transform: scale(1.14);
+    object-position: center 40%;
+  }
+
+  .stage-card--crimson .stage-card__image {
+    transform: scale(1.16);
+    object-position: center 50%;
+  }
+
+  .stage-card--dojo .stage-card__image {
+    transform: scale(1.16);
+    object-position: center 38%;
+  }
+
+  .stage-card--temple .stage-card__image {
+    transform: scale(1.14);
+    object-position: center 44%;
+  }
+
+  .stage-card--market .stage-card__image {
+    transform: scale(1.16);
+    object-position: center 42%;
+  }
+
+  .scene-select__footer {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    width: min(82%, 700px);
+    margin-top: 0;
+    padding-top: 0;
+    display: flex;
+    justify-content: flex-start;
+    padding-left: 7px;
+    box-sizing: border-box;
   }
 }
 
@@ -1662,23 +1899,37 @@ h2.heading {
 .hud-top {
   position: absolute;
   inset: 0 0 auto;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: flex-start;
   padding: 18px 26px;
-  gap: 16px;
+  gap: clamp(8px, 1.6vw, 24px);
 }
 
 .ptag {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  min-width: 42vw;
-  max-width: 46vw;
+  min-width: 0;
 }
 
 .ptag.right {
   align-items: flex-end;
+}
+
+.hud-timer {
+  width: clamp(60px, 8.2vw, 112px);
+  margin-top: -6px;
+  padding-top: 0;
+  justify-self: center;
+  align-self: start;
+}
+
+.hud-timer img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 8px 16px rgb(0 0 0 / 55%));
 }
 
 .pname {
@@ -1724,6 +1975,17 @@ h2.heading {
 
 .hp-fill.p2 {
   background: var(--jade);
+}
+
+@media (max-width: 720px) {
+  .hud-top {
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .hud-timer {
+    width: clamp(62px, 16vw, 104px);
+  }
 }
 
 .stam {
