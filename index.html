@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BUSHIDO BLITZ — a melee duel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=DM+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+</head>
+<body>
+  <div id="app">
+    <div id="loading"><div class="spinner"></div><div>Sharpening steel...</div></div>
+
+    <section class="screen" id="screen-title">
+      <div class="eyebrow">A melee duel</div>
+      <h1 class="title">BUSHIDO<br />BLITZ</h1>
+      <p class="tagline">Read · Strike · Parry · Punish</p>
+      <div class="mode-row">
+        <button type="button" class="btn" data-mode="local">2 Players · same keyboard</button>
+        <button type="button" class="btn ghost" data-mode="ai">1 Player · vs AI</button>
+      </div>
+      <button type="button" class="btn ghost small" data-mode="online">Play on separate phones</button>
+      <p class="soon-note">
+        Same-keyboard and vs-AI play work right now with no setup. Phone-vs-phone is wired to drop in later
+        — see the join screen.
+      </p>
+    </section>
+
+    <section class="screen" id="screen-select">
+      <div class="eyebrow">Choose your fighter</div>
+      <div class="pick-label" id="pick-label">Player 1 — pick your fighter</div>
+      <div class="roster" id="roster"></div>
+      <button type="button" class="btn ghost" data-go="title">Back</button>
+    </section>
+
+    <section class="screen" id="screen-stage">
+      <div class="eyebrow">The duelling ground</div>
+      <h2 class="heading">Pick the ground</h2>
+      <div class="stages" id="stages"></div>
+      <button type="button" class="btn ghost" data-go="select">Back</button>
+    </section>
+
+    <section class="screen" id="screen-online">
+      <div class="eyebrow">Play on separate phones</div>
+      <h2 class="heading">Not wired yet</h2>
+      <p class="soon-note">
+        Phone-to-phone needs a small relay server (browsers can't connect two phones directly — no Bluetooth,
+        no LAN trick). The game is already built so a <b>remote input source</b> plugs into the same slot as
+        keyboard/AI when that relay is added. For now, grab a friend and share a keyboard.
+      </p>
+      <button type="button" class="btn" data-mode="local">Play local instead</button>
+      <button type="button" class="btn ghost" data-go="title">Back</button>
+    </section>
+
+    <section class="screen" id="screen-result">
+      <div class="eyebrow">The duel ends</div>
+      <div class="verdict" id="verdict">—</div>
+      <p class="sip-call" id="sip-call"></p>
+      <div class="mode-row">
+        <button type="button" class="btn" data-go="rematch">Rematch</button>
+        <button type="button" class="btn ghost" data-go="title">Title</button>
+      </div>
+    </section>
+
+    <div id="hud">
+      <div class="hud-top">
+        <div class="ptag left">
+          <div class="pname"><span id="p1-name">P1</span><span class="src" id="p1-src">KEYBOARD</span></div>
+          <div class="hp"><div class="hp-fill" id="p1-hp"></div></div>
+          <div class="stam" id="p1-stam"></div>
+          <div class="round-pips" id="p1-pips"></div>
+        </div>
+        <div class="ptag right">
+          <div class="pname"><span class="src" id="p2-src">AI</span><span id="p2-name">P2</span></div>
+          <div class="hp"><div class="hp-fill p2" id="p2-hp"></div></div>
+          <div class="stam" id="p2-stam"></div>
+          <div class="round-pips" id="p2-pips"></div>
+        </div>
+      </div>
+      <div class="center-call" id="center-call">READY</div>
+      <div class="controls-hint" id="controls-hint"></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

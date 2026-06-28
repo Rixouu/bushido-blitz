@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>BUSHIDO BLITZ — a melee duel</title>
+<style>
+  /* ============================================================
+     BUSHIDO BLITZ — fast 1v1 melee. FOOTSIES tension with a real
+     moveset: walk, run, jump, two strikes, a lunging run-attack,
+     and a shield parry that rewards reading your opponent.
+     Visual world: a duel at the edge of a feudal courtyard —
+     ink-wash sky, lacquer-red accents, the hush before steel.
+     ============================================================ */
+  :root {
+    --paper:  #efe7d6;  /* rice paper / lightest surface */
+    --mist:   #c4c8c0;  /* ink-wash mid grey-green        */
+    --slate:  #5a5d57;  /* stone, secondary text          */
+    --sumi:   #20211c;  /* sumi ink, near-black           */
+    --lacquer:#b83227;  /* lacquer red — the strike accent */
+    --gold:   #cda43c;  /* brass / nerve + highlights      */
+    --jade:   #4f8a6b;  /* P2 / parry feedback             */
+
+    --font-display: 'Cinzel', 'Georgia', serif;
+    --font-body:    'DM Mono', ui-monospace, Menlo, monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; background:var(--sumi); color:var(--slate);
+    font-family:var(--font-body); overflow:hidden;
+    -webkit-tap-highlight-color:transparent; user-select:none; }
+  #app { position:fixed; inset:0; }
+  canvas { display:block; width:100%; height:100%; }
+
+  .screen { position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    padding:24px; gap:26px; opacity:0; pointer-events:none;
+    transition:opacity .4s ease; z-index:10; }
+  .screen.active { opacity:1; pointer-events:auto; }
+  .screen::before { content:''; position:absolute; inset:0; z-index:-1;
+    background:radial-gradient(ellipse at center, transparent 28%, rgba(32,33,28,.6) 100%); }
+
+  .eyebrow { color:var(--gold); font-size:13px; letter-spacing:.42em; text-transform:uppercase; }
+  h1.title { font-family:var(--font-display); color:var(--paper);
+    font-size:clamp(44px,12vw,110px); letter-spacing:.06em; line-height:.95;
+    text-shadow:3px 4px 0 rgba(0,0,0,.45); font-weight:700; }
+  .tagline { color:var(--mist); font-size:clamp(12px,2.6vw,15px); letter-spacing:.32em; text-transform:uppercase; }
+  h2.heading { font-family:var(--font-display); color:var(--paper); font-weight:700;
+    font-size:clamp(26px,6vw,50px); letter-spacing:.03em; text-shadow:2px 3px 0 rgba(0,0,0,.45); }
+
+  .btn { font-family:var(--font-display); font-weight:700; font-size:clamp(16px,3.6vw,22px);
+    letter-spacing:.05em; color:var(--sumi); background:var(--gold); border:none;
+    padding:15px 40px; cursor:pointer; box-shadow:4px 4px 0 rgba(0,0,0,.4);
+    transition:transform .08s,box-shadow .08s,background .2s; }
+  .btn:hover { background:var(--paper); }
+  .btn:active { transform:translate(3px,3px); box-shadow:1px 1px 0 rgba(0,0,0,.4); }
+  .btn.ghost { background:transparent; color:var(--paper); box-shadow:inset 0 0 0 2px var(--mist); }
+  .btn.ghost:hover { box-shadow:inset 0 0 0 2px var(--paper); background:rgba(255,255,255,.05); }
+  .btn.small { font-size:14px; padding:11px 26px; }
+
+  .mode-row { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+
+  /* roster */
+  .roster { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+  .fighter-card { width:clamp(120px,26vw,180px); background:rgba(239,231,214,.05);
+    box-shadow:inset 0 0 0 2px var(--slate); padding:18px 14px; cursor:pointer;
+    transition:transform .12s,box-shadow .12s,background .2s;
+    display:flex; flex-direction:column; align-items:center; gap:11px; }
+  .fighter-card:hover { transform:translateY(-6px); background:rgba(239,231,214,.1); }
+  .fighter-card.selected { box-shadow:inset 0 0 0 3px var(--gold); background:rgba(205,164,60,.14); }
+  .fighter-portrait { width:88px; height:88px; image-rendering:pixelated;
+    background:rgba(0,0,0,.28); display:flex; align-items:center; justify-content:center; font-size:38px; }
+  .fighter-name { font-family:var(--font-display); font-weight:700; color:var(--paper); font-size:17px; }
+  .fighter-blurb { color:var(--mist); font-size:11px; line-height:1.5; }
+  .pick-label { color:var(--gold); font-size:14px; letter-spacing:.28em; text-transform:uppercase; margin-bottom:-6px; }
+
+  /* stages */
+  .stages { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+  .stage-card { width:clamp(150px,36vw,230px); height:112px; cursor:pointer; position:relative;
+    box-shadow:inset 0 0 0 2px var(--slate),4px 4px 0 rgba(0,0,0,.35);
+    display:flex; align-items:flex-end; padding:12px;
+    transition:transform .12s,box-shadow .12s; overflow:hidden; }
+  .stage-card:hover { transform:translateY(-4px); }
+  .stage-card.selected { box-shadow:inset 0 0 0 3px var(--gold),4px 4px 0 rgba(0,0,0,.35); }
+  .stage-card .stage-name { font-family:var(--font-display); font-weight:700; color:var(--paper);
+    font-size:17px; position:relative; z-index:2; text-shadow:2px 2px 0 rgba(0,0,0,.65); }
+  .stage-card::after { content:''; position:absolute; inset:0; z-index:1;
+    background:linear-gradient(180deg,transparent 40%,rgba(0,0,0,.6)); }
+
+  /* HUD */
+  #hud { position:absolute; inset:0; pointer-events:none; z-index:8; opacity:0; transition:opacity .4s; }
+  #hud.active { opacity:1; }
+  .hud-top { position:absolute; top:0; left:0; right:0; display:flex;
+    justify-content:space-between; align-items:flex-start; padding:18px 26px; gap:16px; }
+  .ptag { display:flex; flex-direction:column; gap:7px; min-width:42vw; max-width:46vw; }
+  .ptag.right { align-items:flex-end; }
+  .pname { font-family:var(--font-display); font-weight:700; color:var(--paper); font-size:18px;
+    text-shadow:2px 2px 0 rgba(0,0,0,.5); display:flex; gap:8px; align-items:center; }
+  .pname .src { font-family:var(--font-body); font-weight:400; font-size:10px; letter-spacing:.18em;
+    color:var(--gold); text-transform:uppercase; }
+  /* health bar */
+  .hp { width:100%; height:16px; background:rgba(0,0,0,.45); box-shadow:inset 0 0 0 2px var(--slate); position:relative; }
+  .hp-fill { position:absolute; top:0; bottom:0; left:0; width:100%; background:var(--lacquer); transition:width .18s ease; }
+  .ptag.right .hp-fill { left:auto; right:0; }
+  .hp-fill.p2 { background:var(--jade); }
+  /* parry stamina pips */
+  .stam { display:flex; gap:5px; }
+  .ptag.right .stam { flex-direction:row-reverse; }
+  .stam .blk { width:18px; height:7px; background:var(--gold); box-shadow:inset 0 0 0 1px rgba(0,0,0,.4); transition:opacity .15s,background .15s; }
+  .stam .blk.spent { background:rgba(0,0,0,.4); }
+  .round-pips { display:flex; gap:6px; }
+  .ptag.right .round-pips { flex-direction:row-reverse; }
+  .pip { width:13px; height:13px; background:rgba(0,0,0,.4); box-shadow:inset 0 0 0 2px var(--slate); }
+  .pip.won { background:var(--gold); }
+
+  .center-call { position:absolute; top:34%; left:0; right:0; text-align:center;
+    font-family:var(--font-display); font-weight:700; font-size:clamp(38px,11vw,108px); color:var(--paper);
+    letter-spacing:.05em; text-shadow:4px 5px 0 rgba(0,0,0,.5); opacity:0; pointer-events:none; }
+  .center-call.clash { color:var(--gold); }
+  .center-call.parry { color:var(--jade); }
+  .center-call.ko    { color:var(--lacquer); }
+
+  .controls-hint { position:absolute; bottom:14px; left:0; right:0; text-align:center;
+    color:var(--mist); font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; line-height:1.7; }
+  .controls-hint b { color:var(--gold); }
+
+  /* result */
+  .verdict { font-family:var(--font-display); font-weight:700; font-size:clamp(38px,9vw,80px);
+    color:var(--gold); text-shadow:4px 4px 0 rgba(0,0,0,.4); }
+  .sip-call { color:var(--paper); font-size:clamp(15px,3.6vw,21px); line-height:1.6; max-width:460px; }
+  .sip-call b { color:var(--gold); }
+
+  /* loading */
+  #loading { position:absolute; inset:0; z-index:50; background:var(--sumi);
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:18px;
+    color:var(--mist); letter-spacing:.3em; font-size:13px; text-transform:uppercase; }
+  .spinner { width:42px; height:42px; border:3px solid var(--slate); border-top-color:var(--gold);
+    border-radius:50%; animation:spin 1s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .hidden { display:none !important; }
+
+  /* online-stub note */
+  .soon-note { color:var(--mist); font-size:11px; max-width:380px; line-height:1.6; opacity:.85; }
+  .soon-note b { color:var(--gold); }
+
+  @media (prefers-reduced-motion: reduce) { *,*::before,*::after { transition:none!important; animation:none!important; } }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="app">
+
+  <div id="loading"><div class="spinner"></div><div>Sharpening steel…</div></div>
+
+  <!-- TITLE -->
+  <section class="screen" id="screen-title">
+    <div class="eyebrow">A melee duel</div>
+    <h1 class="title">BUSHIDO<br>BLITZ</h1>
+    <p class="tagline">Read · Strike · Parry · Punish</p>
+    <div class="mode-row">
+      <button class="btn" data-mode="local">2 Players · same keyboard</button>
+      <button class="btn ghost" data-mode="ai">1 Player · vs AI</button>
+    </div>
+    <button class="btn ghost small" data-mode="online">Play on separate phones</button>
+    <p class="soon-note">Same-keyboard and vs-AI play work right now with no setup. Phone-vs-phone is wired to drop in later — see the join screen.</p>
+  </section>
+
+  <!-- SELECT -->
+  <section class="screen" id="screen-select">
+    <div class="eyebrow">Choose your fighter</div>
+    <div class="pick-label" id="pick-label">Player 1 — pick your fighter</div>
+    <div class="roster" id="roster"></div>
+    <button class="btn ghost" data-go="title">Back</button>
+  </section>
+
+  <!-- STAGE -->
+  <section class="screen" id="screen-stage">
+    <div class="eyebrow">The duelling ground</div>
+    <h2 class="heading">Pick the ground</h2>
+    <div class="stages" id="stages"></div>
+    <button class="btn ghost" data-go="select">Back</button>
+  </section>
+
+  <!-- ONLINE STUB -->
+  <section class="screen" id="screen-online">
+    <div class="eyebrow">Play on separate phones</div>
+    <h2 class="heading">Not wired yet</h2>
+    <p class="soon-note">
+      Phone-to-phone needs a small relay server (browsers can't connect two phones directly —
+      no Bluetooth, no LAN trick). The game is already built so a <b>remote input source</b>
+      plugs into the same slot as keyboard/AI when that relay is added.
+      For now, grab a friend and share a keyboard.
+    </p>
+    <button class="btn" data-mode="local">Play local instead</button>
+    <button class="btn ghost" data-go="title">Back</button>
+  </section>
+
+  <!-- RESULT -->
+  <section class="screen" id="screen-result">
+    <div class="eyebrow">The duel ends</div>
+    <div class="verdict" id="verdict">—</div>
+    <p class="sip-call" id="sip-call"></p>
+    <div class="mode-row">
+      <button class="btn" data-go="rematch">Rematch</button>
+      <button class="btn ghost" data-go="title">Title</button>
+    </div>
+  </section>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-top">
+      <div class="ptag left">
+        <div class="pname"><span id="p1-name">P1</span><span class="src" id="p1-src">KEYBOARD</span></div>
+        <div class="hp"><div class="hp-fill" id="p1-hp"></div></div>
+        <div class="stam" id="p1-stam"></div>
+        <div class="round-pips" id="p1-pips"></div>
+      </div>
+      <div class="ptag right">
+        <div class="pname"><span class="src" id="p2-src">AI</span><span id="p2-name">P2</span></div>
+        <div class="hp"><div class="hp-fill p2" id="p2-hp"></div></div>
+        <div class="stam" id="p2-stam"></div>
+        <div class="round-pips" id="p2-pips"></div>
+      </div>
+    </div>
+    <div class="center-call" id="center-call">READY</div>
+    <div class="controls-hint" id="controls-hint"></div>
+  </div>
+
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* ============================================================
+   BUSHIDO BLITZ
+   ------------------------------------------------------------
+   Fast 1v1 melee. Real moveset from the CraftPix Shinobi pack:
+   idle, walk, run, jump, attack1, attack2, run-attack (lunge),
+   shield (parry), hurt, dead.
+
+   FEEL: short range, neutral game like FOOTSIES, but with HP so
+   reads compound. A perfectly-timed SHIELD parries an incoming
+   strike and opens a punish window. Run-attack is a committal
+   gap-closer that loses to a standing parry. Two-ish clean hits
+   end a round; first to 2 rounds wins.
+
+   ARCHITECTURE FOR ONLINE LATER:
+   The fight reads ABSTRACT INPUTS, not keys. Each fighter is
+   driven by an InputSource that exposes a frame snapshot:
+     { left, right, jump, attack, heavy, shield }
+   Implemented sources: KeyboardSource, TouchSource, AISource.
+   A future RemoteSource (fed by a WebSocket relay) plugs into
+   the exact same slot — the simulation never changes. Search
+   "ONLINE DROP-IN" for the seam.
+
+   SPRITES: stubbed with procedural placeholders so it runs now.
+   Search "DROP-IN ASSETS" to wire the real PNG sequences; the
+   Fighter already requests anims by the pack's own names.
+   ============================================================ */
+
+// ---------------------------------------------------------------
+// TUNING
+// ---------------------------------------------------------------
+const CFG = {
+  roundsToWin: 2,
+  arenaHalf: 6.5,          // world units from center to wall
+  walkSpeed: 3.0,
+  runSpeed: 6.2,
+  jumpVel: 7.5,
+  gravity: 22,
+  // strikes
+  light:  { range: 1.7, startup: 0.10, active: 0.08, recover: 0.22, dmg: 12, push: 0.6 },
+  heavy:  { range: 1.9, startup: 0.20, active: 0.09, recover: 0.36, dmg: 22, push: 1.2 },
+  lunge:  { range: 2.4, startup: 0.14, active: 0.10, recover: 0.40, dmg: 16, push: 1.6, dash: 5.5 },
+  // parry
+  parryWindow: 0.18,       // perfect-parry timing from shield press
+  parryStun: 0.55,         // attacker stun on being parried (punish window)
+  shieldHold: 0.0,         // (chip handled below)
+  maxHP: 100,
+  hitstun: 0.32,
+  aiReact: 0.16,           // base AI reaction seconds (higher = easier)
+};
+
+// ---------------------------------------------------------------
+// SPRITE MANIFEST
+//   Frame counts read from the CraftPix Shinobi reference sheet.
+//   Two ways to supply art — pick one in ASSET_MODE below:
+//
+//   'placeholder' : procedural blocky figures (default, runs now)
+//   'sheet'       : one horizontal strip PNG per animation, per
+//                   character, named like:
+//                   /sprites/<charId>/<anim>.png
+//                   e.g. /sprites/ronin/Attack1.png
+//                   Each strip = frames laid left→right, equal width.
+//
+//   The CraftPix pack ships individual frames; the easiest path is
+//   to pack each animation row into one horizontal strip (TexturePacker,
+//   ImageMagick `convert -append`, or a 2-line node script). If you
+//   keep separate frames instead, see ANIM_SHEETS note for the tweak.
+// ---------------------------------------------------------------
+const ASSET_MODE = 'placeholder';        // 'placeholder' | 'sheet'
+const SPRITE_BASE = 'sprites';           // folder root for 'sheet' mode
+
+// anim name → { frames, fps, loop }
+// names map 1:1 to the reference sheet rows.
+const ANIMS = {
+  idle:      { frames:6, fps:8,  loop:true  },
+  idle2:     { frames:8, fps:8,  loop:true  },
+  walk:      { frames:8, fps:12, loop:true  },
+  run:       { frames:8, fps:14, loop:true  },
+  runattack: { frames:8, fps:16, loop:false },   // "Run+Attack" lunge
+  jump:      { frames:8, fps:12, loop:false },
+  attack1:   { frames:4, fps:16, loop:false },
+  attack2:   { frames:4, fps:14, loop:false },
+  hurt:      { frames:3, fps:12, loop:false },
+  dead:      { frames:4, fps:8,  loop:false },
+};
+
+// the source-frame pixel size of one sprite cell (CraftPix shinobi).
+// Used only to keep aspect ratio correct on the plane.
+const FRAME_W = 128, FRAME_H = 128;
+
+// ---------------------------------------------------------------
+// ROSTER — CraftPix Shinobi 3-pack
+// ---------------------------------------------------------------
+const ROSTER = [
+  { id:'ronin',  name:'The Ronin',  emoji:'🥷', tint:0xb44a3a, speed:1.08, blurb:'Red-haired blade. Quick, aggressive, short fuse.' },
+  { id:'reaper', name:'The Reaper', emoji:'⚔️', tint:0x4f7a68, speed:0.94, blurb:'Scythe-bearer. Long reach, patient counters.' },
+  { id:'kaito',  name:'Kaito',      emoji:'🗡️', tint:0x8a7bb0, speed:1.0,  blurb:'Katana, calm hands. Balanced and clean.' },
+];
+
+const STAGES = [
+  { id:'courtyard', name:'Courtyard', sky:0xcfc9b8, ground:0x9a8f78, haze:0xe2dcc8 },
+  { id:'dusk',      name:'Red Dusk',  sky:0xc98a6e, ground:0x7a4f40, haze:0xb83227 },
+  { id:'bamboo',    name:'Bamboo',    sky:0xbcc6ad, ground:0x5f7a55, haze:0xd6e0c2 },
+  { id:'moon',      name:'Cold Moon', sky:0x3b4458, ground:0x2a3344, haze:0x6b7c99 },
+];
+
+// ---------------------------------------------------------------
+// GAME STATE
+// ---------------------------------------------------------------
+const G = {
+  screen:'title', mode:'local', selecting:1,
+  picks:{1:null,2:null}, stage:null,
+  scores:{1:0,2:0}, sources:{1:null,2:null}, round:null,
+};
+
+// ---------------------------------------------------------------
+// THREE SETUP
+// ---------------------------------------------------------------
+const app = document.getElementById('app');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.domElement.style.cssText = 'position:absolute;inset:0;z-index:1';
+app.prepend(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xe2dcc8, 14, 36);
+
+const camera = new THREE.PerspectiveCamera(40, innerWidth/innerHeight, 0.1, 100);
+const CAM_BASE = new THREE.Vector3(0, 2.7, 12.5);
+camera.position.copy(CAM_BASE);
+camera.lookAt(0,1.7,0);
+
+scene.add(new THREE.AmbientLight(0xb6ad92, 0.6));
+const sun = new THREE.DirectionalLight(0xfff1d6, 1.1); sun.position.set(-6,9,6); scene.add(sun);
+
+const groundMat = new THREE.MeshStandardMaterial({ color:0x9a8f78, roughness:1 });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(60,40), groundMat);
+ground.rotation.x = -Math.PI/2; scene.add(ground);
+
+const skyMat = new THREE.MeshBasicMaterial({ color:0xcfc9b8 });
+const sky = new THREE.Mesh(new THREE.PlaneGeometry(80,30), skyMat);
+sky.position.set(0,8,-16); scene.add(sky);
+
+const props = new THREE.Group(); scene.add(props);
+function buildProps(tint){
+  props.clear();
+  const mat = new THREE.MeshStandardMaterial({ color:tint, roughness:1 });
+  for(let i=0;i<10;i++){
+    const h = 1.2 + Math.random()*3;
+    const m = new THREE.Mesh(new THREE.BoxGeometry(0.35+Math.random()*0.5,h,0.35), mat);
+    const side = i%2===0?-1:1;
+    m.position.set(side*(7+Math.random()*9), h/2, -6-Math.random()*7);
+    props.add(m);
+  }
+}
+
+// ---------------------------------------------------------------
+// FIGHTER (sprite plane + state machine)
+//
+//   ===== DROP-IN ASSETS =====
+//   Replace makePlaceholder() with a real sprite-sheet loader.
+//   The state machine calls this.play('attack1' | 'attack2' |
+//   'lunge'->'run'+'attack' | 'shield' | 'hurt' | 'dead' | 'run'
+//   | 'walk' | 'jump' | 'idle'). Map each to a frame sequence and
+//   advance frames by dt in update(); use texture.offset/repeat
+//   for the source rect (same math as Pixel Olympics sprite-sheets.js).
+// ---------------------------------------------------------------
+// ---------------------------------------------------------------
+// SPRITE LOADING
+//   In 'sheet' mode we lazily load one strip texture per (char,anim)
+//   and cache it. Each strip is N frames wide; we show one frame by
+//   setting texture.repeat.x = 1/N and texture.offset.x = frame/N.
+//   This is the same source-rect idea as Pixel Olympics' sprite-sheets.js.
+// ---------------------------------------------------------------
+const texLoader = new THREE.TextureLoader();
+const sheetCache = new Map();            // key "char/anim" → THREE.Texture
+
+function loadSheet(charId, anim){
+  const key = charId + '/' + anim;
+  if(sheetCache.has(key)) return sheetCache.get(key);
+  const def = ANIMS[anim];
+  // strip filename uses the sheet's row label (capitalized) — adjust to your files
+  const file = ANIM_FILE[anim] || anim;
+  const tex = texLoader.load(`${SPRITE_BASE}/${charId}/${file}.png`);
+  tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.repeat.set(1/def.frames, 1);       // show one frame's worth horizontally
+  sheetCache.set(key, tex);
+  return tex;
+}
+
+// maps anim id → the PNG filename you exported (no extension).
+// rename these to match whatever you call your strips.
+const ANIM_FILE = {
+  idle:'Idle', idle2:'Idle2', walk:'Walk', run:'Run',
+  runattack:'Run_Attack', jump:'Jump', attack1:'Attack1',
+  attack2:'Attack2', hurt:'Hurt', dead:'Dead',
+};
+
+// procedural placeholder (used when ASSET_MODE==='placeholder')
+function makePlaceholder(emoji, tint){
+  const c=document.createElement('canvas'); c.width=c.height=256;
+  const x=c.getContext('2d'); const col='#'+tint.toString(16).padStart(6,'0');
+  x.fillStyle=col;
+  x.fillRect(100,72,56,140); x.fillRect(110,42,36,38);
+  x.fillRect(88,92,16,86); x.fillRect(152,92,16,86);
+  x.fillRect(106,212,18,40); x.fillRect(132,212,18,40);
+  x.font='42px serif'; x.textAlign='center'; x.fillText(emoji,128,70);
+  const t=new THREE.CanvasTexture(c); t.magFilter=t.minFilter=THREE.NearestFilter; return t;
+}
+
+class Fighter {
+  constructor(roster, facing){
+    this.r = roster; this.facing = facing;       // +1 faces right, -1 faces left
+    // placeholder texture is the fallback; in sheet mode we swap per-anim
+    this.placeholderTex = makePlaceholder(roster.emoji, roster.tint);
+    const mat = new THREE.MeshBasicMaterial({ map:this.placeholderTex, transparent:true });
+    const aspect = FRAME_H/FRAME_W;
+    this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 2.3*aspect), mat);
+    this.baseY = 1.45; this.mesh.position.y = this.baseY;
+    scene.add(this.mesh);
+    // animation runtime
+    this.anim = 'idle'; this.frame = 0; this.frameT = 0; this.animDone = false;
+    this.reset(facing>0 ? -3.2 : 3.2);
+  }
+  reset(x){
+    this.x = x; this.y = 0; this.vy = 0;
+    this.hp = CFG.maxHP; this.stam = 3;          // parry stamina (3 blocks)
+    this.state = 'idle'; this.stateT = 0;
+    this.attack = null;                          // {type, t, hasHit}
+    this.stun = 0; this.dashV = 0;
+    this.parryActive = 0;                         // remaining perfect-parry time
+    this.parriedTimer = 0;                        // attacker stunned after being parried
+    this.dead = false;
+    this.mesh.rotation.z = 0; this.mesh.position.y = this.baseY;
+    this.play('idle');
+    this.sync();
+  }
+  sync(){
+    this.mesh.position.x = this.x;
+    this.mesh.position.y = this.baseY + this.y;
+    this.mesh.scale.x = this.facing * Math.abs(this.mesh.scale.x || 1);
+  }
+
+  // switch animation. `name` is one of the ANIMS keys (or a state alias).
+  play(name){
+    // alias mapping: state names → sprite anim names
+    const alias = { steady:'idle2', lunge:'runattack', shield:'idle2', fire:'attack1' };
+    const animName = ANIMS[name] ? name : (alias[name] || 'idle');
+    this.state = name;                            // keep gameplay state separate
+    if(this.anim === animName) return;            // already playing
+    this.anim = animName; this.frame = 0; this.frameT = 0; this.animDone = false;
+    if(ASSET_MODE === 'sheet'){
+      const tex = loadSheet(this.r.id, animName);
+      this.mesh.material.map = tex;
+      tex.offset.x = 0;
+      this.mesh.material.needsUpdate = true;
+    }
+  }
+
+  // advance the current animation's frame
+  stepAnim(dt){
+    const def = ANIMS[this.anim]; if(!def) return;
+    this.frameT += dt;
+    const spf = 1/def.fps;
+    while(this.frameT >= spf){
+      this.frameT -= spf;
+      if(this.frame < def.frames-1) this.frame++;
+      else if(def.loop) this.frame = 0;
+      else this.animDone = true;                  // hold last frame
+    }
+    if(ASSET_MODE === 'sheet'){
+      const tex = this.mesh.material.map;
+      if(tex) tex.offset.x = this.frame / def.frames;
+    }
+  }
+
+  canAct(){ return !this.dead && this.stun<=0 && this.parriedTimer<=0 &&
+                   !this.attack && this.state!=='hurt'; }
+
+  startAttack(type){
+    if(!this.canAct()) return;
+    const spec = type==='heavy'?CFG.heavy : type==='lunge'?CFG.lunge : CFG.light;
+    this.attack = { type, t:0, spec, hasHit:false };
+    if(type==='lunge'){ this.play('lunge'); this.dashV = CFG.lunge.dash * this.facing; }
+    else this.play(type==='heavy'?'attack2':'attack1');
+  }
+  startShield(){
+    if(!this.canAct()) return;
+    if(this.stam<=0) return;
+    this.play('shield');
+    this.parryActive = CFG.parryWindow;          // perfect window from press
+    this.state='shield';
+  }
+  takeHit(dmg, push, fromFacing){
+    if(this.dead) return;
+    this.hp = Math.max(0, this.hp - dmg);
+    this.stun = CFG.hitstun; this.attack = null;
+    this.x += push * fromFacing;
+    if(this.hp<=0){ this.dead=true; this.play('dead'); }
+    else this.play('hurt');
+  }
+  onParried(){                                    // my attack got parried
+    this.attack = null; this.parriedTimer = CFG.parryStun; this.play('hurt');
+  }
+
+  update(dt, input, foe){
+    this.stateT += dt;
+    if(this.stun>0) this.stun-=dt;
+    if(this.parriedTimer>0) this.parriedTimer-=dt;
+    if(this.parryActive>0) this.parryActive-=dt;
+
+    // face the opponent (only when free to turn)
+    if(this.canAct() && Math.abs(foe.x-this.x)>0.05)
+      this.facing = foe.x > this.x ? 1 : -1;
+
+    // movement (only when actionable and not mid-attack)
+    let moving=false;
+    if(this.canAct() && this.state!=='shield'){
+      const run = input.run;
+      const sp = (run?CFG.runSpeed:CFG.walkSpeed) * this.r.speed;
+      if(input.left){ this.x -= sp*dt; moving=true; this.facing=-1; }
+      if(input.right){ this.x += sp*dt; moving=true; this.facing=1; }
+      // jump
+      if(input.jump && this.y<=0.001){ this.vy = CFG.jumpVel; this.play('jump'); }
+    }
+
+    // lunge dash carry
+    if(this.attack && this.attack.type==='lunge'){
+      this.x += this.dashV*dt; this.dashV *= 0.86;
+    }
+
+    // gravity / vertical
+    this.vy -= CFG.gravity*dt; this.y += this.vy*dt;
+    if(this.y<0){ this.y=0; this.vy=0; }
+
+    // attack lifecycle
+    if(this.attack){
+      const a=this.attack, s=a.spec; a.t+=dt;
+      const inActive = a.t>=s.startup && a.t<s.startup+s.active;
+      if(inActive && !a.hasHit){
+        const dist = Math.abs(foe.x - this.x);
+        const facingFoe = (foe.x>this.x?1:-1)===this.facing;
+        if(facingFoe && dist <= s.range && Math.abs(foe.y-this.y)<1.2){
+          a.hasHit = true;
+          // did foe parry?
+          if(foe.state==='shield' && foe.parryActive>0 && (this.x>foe.x?-1:1)===foe.facing){
+            foe.stam = Math.min(3, foe.stam);     // keep stam, reward read
+            this.onParried();
+            callParry(foe);
+          } else if(foe.state==='shield' && foe.stam>0){
+            // blocked (not perfect) — chip + lose a block, small pushback
+            foe.stam--; foe.x += s.push*0.5*this.facing; foe.hp=Math.max(0,foe.hp-Math.ceil(s.dmg*0.15));
+            if(foe.hp<=0){foe.dead=true;foe.play('dead');}
+            callBlock();
+          } else {
+            foe.takeHit(s.dmg, s.push, this.facing);
+            callClash(s.dmg>=20);
+            punch(0.35);
+          }
+        }
+      }
+      if(a.t >= s.startup+s.active+s.recover){ this.attack=null; this.play('idle'); }
+    }
+
+    // resolve non-attack visual state
+    if(!this.attack && !this.dead && this.stun<=0 && this.parriedTimer<=0){
+      if(this.state==='shield'){ if(!input.shield) this.play('idle'); }
+      else if(this.y>0.02) this.play('jump');
+      else if(moving) this.play(input.run?'run':'walk');
+      else if(this.state!=='hurt' || this.stateT>0.2) this.play('idle');
+    }
+
+    // clamp to arena (BEFORE visuals so sprite never shows off-screen)
+    this.x = Math.max(-CFG.arenaHalf, Math.min(CFG.arenaHalf, this.x));
+
+    // advance sprite frames
+    this.stepAnim(dt);
+
+    // ---- placeholder-only visual feedback (real sprites animate via stepAnim) ----
+    if(ASSET_MODE === 'placeholder'){
+      if(this.state==='idle')  this.mesh.position.y = this.baseY + this.y + Math.sin(this.stateT*3)*0.03;
+      else this.mesh.position.y = this.baseY + this.y;
+      let targetRot = 0;
+      if(this.attack) targetRot = -0.25*this.facing;
+      if(this.state==='shield') targetRot = 0.12*this.facing;
+      if(this.dead) targetRot = 1.4*this.facing;
+      if(this.state==='hurt') targetRot = 0.2*this.facing;
+      this.mesh.rotation.z = THREE.MathUtils.lerp(this.mesh.rotation.z, targetRot, this.dead?0.1:0.3);
+    } else {
+      this.mesh.position.y = this.baseY + this.y;
+      this.mesh.rotation.z = 0;
+    }
+    this.sync();
+  }
+  dispose(){ scene.remove(this.mesh); this.mesh.geometry.dispose(); this.mesh.material.dispose(); this.placeholderTex.dispose(); }
+}
+
+let F = {1:null,2:null};
+
+// ---------------------------------------------------------------
+// INPUT SOURCES  (the key abstraction for ONLINE DROP-IN)
+//   Every source returns a per-frame snapshot:
+//     { left,right,jump,attack,heavy,shield,run }
+//   Edge-detection (e.g. jump only on press) is handled by the
+//   source so the sim just reads booleans.
+// ---------------------------------------------------------------
+class KeyboardSource {
+  constructor(map){ this.map=map; this.keys={}; this.label='KEYBOARD';
+    this._down=e=>{ if(Object.values(this.map).includes(e.code)){e.preventDefault(); this.keys[e.code]=true;} };
+    this._up=e=>{ if(Object.values(this.map).includes(e.code)){e.preventDefault(); this.keys[e.code]=false;} };
+    addEventListener('keydown',this._down); addEventListener('keyup',this._up);
+  }
+  read(){ const k=this.keys,m=this.map; return {
+    left:!!k[m.left], right:!!k[m.right], jump:!!k[m.jump],
+    attack:!!k[m.attack], heavy:!!k[m.heavy], shield:!!k[m.shield],
+    run:!!k[m.run] || (!!k[m.left]&&!!k[m.right]?false:false) || !!k[m.run],
+  }; }
+  dispose(){ removeEventListener('keydown',this._down); removeEventListener('keyup',this._up); }
+}
+
+class TouchSource {
+  // half-screen zones: tap=light, swipe up=jump, hold=shield, swipe fwd=lunge
+  constructor(side){ this.side=side; this.label='TOUCH';
+    this.s={left:false,right:false,jump:false,attack:false,heavy:false,shield:false,run:false};
+  }
+  set(part){ Object.assign(this.s, part); }
+  read(){ const o={...this.s}; this.s.attack=false; this.s.heavy=false; this.s.jump=false; return o; }
+  dispose(){}
+}
+
+class AISource {
+  constructor(getSelf,getFoe,level=1){ this.getSelf=getSelf; this.getFoe=getFoe; this.level=level;
+    this.label='AI'; this.t=0; this.decision={}; this.next=0; }
+  read(){
+    const me=this.getSelf(), foe=this.getFoe();
+    if(!me||!foe) return blankInput();
+    this.t+=1/60;
+    const dist = Math.abs(foe.x-me.x);
+    // re-decide periodically (reaction ~ aiReact)
+    if(this.t>=this.next){
+      this.next = this.t + CFG.aiReact*(0.7+Math.random()*0.8);
+      const d={left:false,right:false,jump:false,attack:false,heavy:false,shield:false,run:false};
+      // if foe is attacking & close → try to parry sometimes
+      if(foe.attack && dist<2.4 && Math.random()<0.5){ d.shield=true; }
+      else if(dist>3){ // close the gap
+        if(foe.x>me.x){ d.right=true; } else { d.left=true; }
+        d.run = Math.random()<0.6;
+        if(dist>3.5 && Math.random()<0.25){ d.right = foe.x>me.x; d.left=foe.x<me.x; d.attack = false; /* save lunge */ }
+      } else if(dist<=2.0){ // in range → strike
+        if(Math.random()<0.25) d.heavy=true; else d.attack=true;
+      } else { // mid — poke or approach
+        if(Math.random()<0.4){ if(foe.x>me.x)d.right=true; else d.left=true; }
+        else d.attack=true;
+      }
+      this.decision=d;
+    }
+    return {...this.decision};
+  }
+  dispose(){}
+}
+function blankInput(){ return {left:false,right:false,jump:false,attack:false,heavy:false,shield:false,run:false}; }
+
+/* ONLINE DROP-IN ───────────────────────────────────────────────
+   When you add a relay server, implement:
+
+   class RemoteSource {
+     constructor(socket){ this.s=blankInput(); this.label='ONLINE';
+       socket.on('input', snap => this.s = snap); }   // fed by peer
+     read(){ return {...this.s}; }
+   }
+
+   Then in setupSources(), assign F[2]'s source = new RemoteSource(sock).
+   Crucially: send YOUR local source.read() to the peer each frame,
+   and step the sim on a fixed timestep on both sides. For lag,
+   layer rollback later — but even naive lockstep will work on LAN.
+   Nothing in Fighter/round logic changes.
+─────────────────────────────────────────────────────────────── */
+
+// per-attack input edge tracking (so taps fire once)
+function makeEdge(){ return { attack:false, heavy:false, jump:false, prev:{} }; }
+
+// ---------------------------------------------------------------
+// SCREENS
+// ---------------------------------------------------------------
+const S = {
+  title:document.getElementById('screen-title'),
+  select:document.getElementById('screen-select'),
+  stage:document.getElementById('screen-stage'),
+  online:document.getElementById('screen-online'),
+  result:document.getElementById('screen-result'),
+};
+const hud=document.getElementById('hud');
+function show(name){
+  G.screen=name;
+  Object.values(S).forEach(s=>s.classList.remove('active'));
+  hud.classList.remove('active');
+  if(S[name]) S[name].classList.add('active');
+  if(name==='fight') hud.classList.add('active');
+}
+
+document.querySelectorAll('[data-go]').forEach(b=>b.addEventListener('click',()=>{
+  const t=b.dataset.go;
+  if(t==='title') goTitle();
+  else if(t==='select') startSelect();
+  else if(t==='rematch') startFight(true);
+  else show(t);
+}));
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{
+  const m=b.dataset.mode;
+  if(m==='online'){ show('online'); return; }
+  G.mode=m; startSelect();
+}));
+
+function goTitle(){ G.scores={1:0,2:0}; G.picks={1:null,2:null}; G.selecting=1; show('title'); }
+
+// ---------------------------------------------------------------
+// SELECT
+// ---------------------------------------------------------------
+const rosterEl=document.getElementById('roster');
+const pickLabel=document.getElementById('pick-label');
+function buildRoster(){
+  rosterEl.innerHTML='';
+  ROSTER.forEach(r=>{
+    const c=document.createElement('div'); c.className='fighter-card';
+    c.innerHTML=`<div class="fighter-portrait" style="color:#${r.tint.toString(16).padStart(6,'0')}">${r.emoji}</div>
+      <div class="fighter-name">${r.name}</div><div class="fighter-blurb">${r.blurb}</div>`;
+    c.addEventListener('click',()=>pick(r.id,c));
+    rosterEl.appendChild(c);
+  });
+}
+function startSelect(){
+  G.selecting=1; G.picks={1:null,2:null};
+  pickLabel.textContent = G.mode==='ai' ? 'Pick your fighter' : 'Player 1 — pick your fighter';
+  [...rosterEl.children].forEach(c=>c.classList.remove('selected'));
+  show('select');
+}
+function pick(id,card){
+  const p=G.selecting; G.picks[p]=id;
+  [...rosterEl.children].forEach(c=>c.classList.remove('selected')); card.classList.add('selected');
+  if(G.mode==='ai'){
+    // player picks P1; AI gets a random different fighter
+    const others=ROSTER.filter(r=>r.id!==id); G.picks[2]=others[Math.floor(Math.random()*others.length)].id;
+    setTimeout(buildStage,200); return;
+  }
+  if(p===1){ G.selecting=2; pickLabel.textContent='Player 2 — pick your fighter';
+    setTimeout(()=>[...rosterEl.children].forEach(c=>c.classList.remove('selected')),220); }
+  else setTimeout(buildStage,200);
+}
+
+// ---------------------------------------------------------------
+// STAGE
+// ---------------------------------------------------------------
+const stagesEl=document.getElementById('stages');
+function buildStage(){
+  stagesEl.innerHTML='';
+  STAGES.forEach(s=>{
+    const c=document.createElement('div'); c.className='stage-card';
+    c.style.background=`linear-gradient(180deg,#${s.sky.toString(16).padStart(6,'0')},#${s.ground.toString(16).padStart(6,'0')})`;
+    c.innerHTML=`<div class="stage-name">${s.name}</div>`;
+    c.addEventListener('click',()=>{ G.stage=s;
+      [...stagesEl.children].forEach(x=>x.classList.remove('selected')); c.classList.add('selected');
+      setTimeout(()=>startFight(false),240); });
+    stagesEl.appendChild(c);
+  });
+  show('stage');
+}
+function applyStage(s){
+  skyMat.color.setHex(s.sky); groundMat.color.setHex(s.ground);
+  scene.fog.color.setHex(s.haze); renderer.setClearColor(s.sky,1);
+  buildProps(new THREE.Color(s.ground).multiplyScalar(0.6).getHex());
+}
+
+// ---------------------------------------------------------------
+// HUD refs
+// ---------------------------------------------------------------
+const H={
+  p1name:document.getElementById('p1-name'), p2name:document.getElementById('p2-name'),
+  p1src:document.getElementById('p1-src'),   p2src:document.getElementById('p2-src'),
+  p1hp:document.getElementById('p1-hp'),     p2hp:document.getElementById('p2-hp'),
+  p1stam:document.getElementById('p1-stam'), p2stam:document.getElementById('p2-stam'),
+  p1pips:document.getElementById('p1-pips'), p2pips:document.getElementById('p2-pips'),
+  center:document.getElementById('center-call'), hint:document.getElementById('controls-hint'),
+};
+function renderPips(){
+  [['p1pips',1],['p2pips',2]].forEach(([k,p])=>{ const b=H[k]; b.innerHTML='';
+    for(let i=0;i<CFG.roundsToWin;i++){ const d=document.createElement('div');
+      d.className='pip'+(i<G.scores[p]?' won':''); b.appendChild(d);} });
+}
+function renderStam(){
+  [['p1stam',1],['p2stam',2]].forEach(([k,p])=>{ const b=H[k]; b.innerHTML='';
+    const f=F[p]; for(let i=0;i<3;i++){ const d=document.createElement('div');
+      d.className='blk'+(i>=f.stam?' spent':''); b.appendChild(d);} });
+}
+
+// ---------------------------------------------------------------
+// SETUP SOURCES per mode
+// ---------------------------------------------------------------
+function setupSources(){
+  G.sources[1]&&G.sources[1].dispose&&G.sources[1].dispose();
+  G.sources[2]&&G.sources[2].dispose&&G.sources[2].dispose();
+
+  // P1 always keyboard (left cluster) on desktop; touch handled separately
+  G.sources[1]=new KeyboardSource({ left:'KeyA', right:'KeyD', jump:'KeyW',
+    attack:'KeyF', heavy:'KeyG', shield:'KeyS', run:'ShiftLeft' });
+
+  if(G.mode==='ai'){
+    G.sources[2]=new AISource(()=>F[2],()=>F[1],1);
+  } else { // local 2P — arrows + numpad-ish on right
+    G.sources[2]=new KeyboardSource({ left:'ArrowLeft', right:'ArrowRight', jump:'ArrowUp',
+      attack:'Period', heavy:'Slash', shield:'ArrowDown', run:'ShiftRight' });
+  }
+  H.p1src.textContent=G.sources[1].label;
+  H.p2src.textContent=G.sources[2].label;
+
+  // controls hint per mode
+  if(G.mode==='ai'){
+    H.hint.innerHTML = `Move <b>A D</b> · Jump <b>W</b> · Run <b>Shift</b> · Strike <b>F</b> · Heavy <b>G</b> · Parry <b>S</b>`;
+  } else {
+    H.hint.innerHTML = `P1: <b>A D</b> move · <b>W</b> jump · <b>F</b> strike · <b>G</b> heavy · <b>S</b> parry &nbsp;&nbsp;|&nbsp;&nbsp; P2: <b>← →</b> move · <b>↑</b> jump · <b>.</b> strike · <b>/</b> heavy · <b>↓</b> parry`;
+  }
+}
+
+// ---------------------------------------------------------------
+// FIGHT / ROUND
+// ---------------------------------------------------------------
+function startFight(isRematch){
+  if(isRematch) G.scores={1:0,2:0};
+  Object.values(F).forEach(f=>f&&f.dispose());
+  const r1=ROSTER.find(r=>r.id===G.picks[1])||ROSTER[0];
+  const r2=ROSTER.find(r=>r.id===G.picks[2])||ROSTER[1];
+  F[1]=new Fighter(r1,+1); F[2]=new Fighter(r2,-1);
+  H.p1name.textContent=r1.name; H.p2name.textContent=r2.name;
+  applyStage(G.stage||STAGES[0]);
+  setupSources();
+  G.edges={1:makeEdge(),2:makeEdge()};
+  renderPips();
+  show('fight');
+  beginRound();
+}
+
+function beginRound(){
+  F[1].reset(-3.2); F[2].reset(3.2);
+  renderStam(); updateHP();
+  G.round={ phase:'intro', t:0, resolved:false };
+  call('READY','',1);
+  setTimeout(()=>{ if(G.round){ call('FIGHT!','clash',1);
+    setTimeout(()=>{ if(G.round){G.round.phase='live'; fade();} },350); } },650);
+}
+
+function call(text,cls,a){ H.center.textContent=text; H.center.className='center-call '+(cls||''); H.center.style.opacity=a; }
+function fade(){ // ease the center call out during live play
+  let o=0.9; const id=setInterval(()=>{ o-=0.08; H.center.style.opacity=Math.max(0,o);
+    if(o<=0||!G.round||G.round.phase!=='live') clearInterval(id); },40); }
+function callClash(big){ call(big?'HIT!':'•','clash',1); flash(160); }
+function callBlock(){ call('BLOCK','parry',1); flash(120); }
+function callParry(f){ call('PARRY!','parry',1); flash(200); punch(0.45); }
+function flash(ms){ const o=H.center.style.opacity; setTimeout(()=>{ if(G.round&&G.round.phase==='live') H.center.style.opacity=0; },ms); }
+
+function updateHP(){
+  H.p1hp.style.width=(F[1].hp/CFG.maxHP*100)+'%';
+  H.p2hp.style.width=(F[2].hp/CFG.maxHP*100)+'%';
+}
+
+function endRound(winner){
+  if(G.round.resolved) return; G.round.resolved=true; G.round.phase='over';
+  if(winner) G.scores[winner]++;
+  renderPips();
+  const name = winner? F[winner].r.name : null;
+  call(name?`${name} takes it`:'DRAW','ko',1);
+  punch(0.5);
+  setTimeout(()=>{
+    if(G.scores[1]>=CFG.roundsToWin||G.scores[2]>=CFG.roundsToWin) endDuel();
+    else beginRound();
+  },1600);
+}
+
+function endDuel(){
+  const p1=G.scores[1]>G.scores[2];
+  const win=(p1?F[1]:F[2]).r.name, lose=(p1?F[2]:F[1]).r.name;
+  const margin=Math.abs(G.scores[1]-G.scores[2]);
+  document.getElementById('verdict').textContent=`${win} stands`;
+  const sips=margin*2;
+  const vsAI = G.mode==='ai';
+  document.getElementById('sip-call').innerHTML = vsAI
+    ? `You ${p1?'won':'lost'} ${G.scores[1]}–${G.scores[2]}.${p1?' Clean.':' The blade was faster.'} Run it back?`
+    : `${lose} falls — and drinks <b>${sips}</b> ${sips===1?'sip':'sips'}.<br>Final ${G.scores[1]}–${G.scores[2]}. Again?`;
+  show('result');
+}
+
+// ---------------------------------------------------------------
+// TOUCH controls (two thumb zones)  — works for local 2P on tablet
+// ---------------------------------------------------------------
+function bindTouch(){
+  // Use TouchSource only on touch devices; we set per-frame intent.
+  // Simple scheme: tap = strike, hold = shield, swipe up = jump,
+  // drag toward center = run, drag away = back.
+  const touches={};
+  renderer.domElement.addEventListener('touchstart',e=>{
+    for(const t of e.changedTouches){
+      const side = t.clientX < innerWidth/2 ? 1 : 2;
+      if(G.sources[side] instanceof KeyboardSource) continue; // desktop mode
+      touches[t.identifier]={side,x0:t.clientX,y0:t.clientY,t0:performance.now()};
+    }
+  },{passive:true});
+  renderer.domElement.addEventListener('touchmove',e=>{
+    for(const t of e.changedTouches){ const o=touches[t.identifier]; if(!o)continue;
+      const src=G.sources[o.side]; if(!(src instanceof TouchSource))continue;
+      const dx=t.clientX-o.x0, dy=t.clientY-o.y0; const me=F[o.side], foe=F[o.side===1?2:1];
+      const toward = (foe.x>me.x?1:-1);
+      src.set({ left:dx<-12&&toward<0?true: dx<-12&&toward>0?true:dx<-12, right:dx>12,
+        shield: Math.abs(dx)<12&&Math.abs(dy)<12, run:Math.abs(dx)>60, jump: dy<-40 });
+    }
+  },{passive:true});
+  renderer.domElement.addEventListener('touchend',e=>{
+    for(const t of e.changedTouches){ const o=touches[t.identifier]; if(!o)continue;
+      const src=G.sources[o.side]; const dt=performance.now()-o.t0;
+      const dx=t.clientX-o.x0, dy=t.clientY-o.y0;
+      if(src instanceof TouchSource){
+        if(dt<220 && Math.abs(dx)<16 && Math.abs(dy)<16) src.set({attack:true});
+        else if(Math.abs(dx)>80) src.set({heavy:true}); // big swipe = heavy/lunge
+        src.set({left:false,right:false,shield:false,run:false});
+      }
+      delete touches[t.identifier];
+    }
+  },{passive:true});
+}
+
+// ---------------------------------------------------------------
+// CAMERA JUICE
+// ---------------------------------------------------------------
+let shake=0; function punch(v){ shake=Math.max(shake,v); }
+
+// ---------------------------------------------------------------
+// APPLY INPUT (edge-detect taps → fighter actions)
+// ---------------------------------------------------------------
+function drive(p, dt){
+  const f=F[p], src=G.sources[p], e=G.edges[p];
+  const raw=src.read();
+  // hold-style: left/right/run/shield pass through
+  const input={ left:raw.left, right:raw.right, run:raw.run, jump:false, shield:raw.shield };
+
+  // shield (hold) — engage on press if not already
+  if(raw.shield && f.state!=='shield' && f.canAct()) f.startShield();
+
+  // edges for tap actions
+  const jPress = raw.jump && !e.prev.jump;
+  const aPress = raw.attack && !e.prev.attack;
+  const hPress = raw.heavy && !e.prev.heavy;
+  if(jPress) input.jump=true;
+  if(aPress){
+    // run+attack → lunge, else light
+    if(raw.run && (raw.left||raw.right)) f.startAttack('lunge'); else f.startAttack('light');
+  }
+  if(hPress) f.startAttack('heavy');
+
+  e.prev={ jump:raw.jump, attack:raw.attack, heavy:raw.heavy };
+
+  f.update(dt, input, F[p===1?2:1]);
+}
+
+// ---------------------------------------------------------------
+// LOOP (fixed-ish timestep so it's deterministic enough for online)
+// ---------------------------------------------------------------
+const clock=new THREE.Clock(); let acc=0; const STEP=1/60;
+function tick(){
+  const dt=Math.min(clock.getDelta(),0.05);
+
+  if(G.screen==='fight' && G.round){
+    acc+=dt;
+    while(acc>=STEP){
+      const s=STEP;
+      if(G.round.phase==='live'){
+        drive(1,s); drive(2,s);
+        // push-apart so they don't overlap, THEN re-clamp both to walls
+        const gap=Math.abs(F[1].x-F[2].x);
+        if(gap<1.3){ const mid=(F[1].x+F[2].x)/2; F[1].x=mid-0.65; F[2].x=mid+0.65; }
+        F[1].x=Math.max(-CFG.arenaHalf,Math.min(CFG.arenaHalf,F[1].x));
+        F[2].x=Math.max(-CFG.arenaHalf,Math.min(CFG.arenaHalf,F[2].x));
+        F[1].sync(); F[2].sync();
+        updateHP(); renderStam();
+        // win check
+        if(F[1].dead || F[2].dead){
+          const w = F[1].dead && F[2].dead ? 0 : (F[1].dead?2:1);
+          // let death anim breathe before scoring
+          G.round.phase='dying'; G.round.dieT=0; G.round._w=w;
+        }
+      } else if(G.round.phase==='dying'){
+        drive(1,s); drive(2,s);
+        G.round.dieT+=s; if(G.round.dieT>0.7) endRound(G.round._w);
+      } else {
+        // intro / over — still animate fighters idle
+        F[1]&&F[1].update(s,blankInput(),F[2]); F[2]&&F[2].update(s,blankInput(),F[1]);
+      }
+      acc-=s;
+    }
+    // camera follows midpoint slightly (kept small so wall positions stay in frame)
+    const mid=(F[1].x+F[2].x)/2;
+    CAM_BASE.x = mid*0.12;
+  }
+
+  // camera shake
+  if(shake>0.001){ camera.position.x=CAM_BASE.x+(Math.random()-0.5)*shake;
+    camera.position.y=CAM_BASE.y+(Math.random()-0.5)*shake; shake*=0.85; }
+  else { camera.position.x+= (CAM_BASE.x-camera.position.x)*0.1; camera.position.y=CAM_BASE.y; }
+  camera.position.z=CAM_BASE.z; camera.lookAt(0,1.7,0);
+
+  renderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+
+// ---------------------------------------------------------------
+// ARENA WIDTH (responsive walls)
+//   Compute how wide the visible world is at the duel plane (z=0)
+//   so walls always match what the player sees. Fighters clamp to
+//   this and can never leave the frame, on any aspect ratio.
+// ---------------------------------------------------------------
+function recomputeArena(){
+  const dist = camera.position.z;
+  const vFov = THREE.MathUtils.degToRad(camera.fov);
+  const visH = 2 * Math.tan(vFov/2) * dist;
+  const visW = visH * camera.aspect;
+  CFG.arenaHalf = Math.max(3.2, visW/2 - 1.3);   // margin = half a fighter
+}
+
+// ---------------------------------------------------------------
+// BOOT
+// ---------------------------------------------------------------
+function boot(){
+  buildRoster(); applyStage(STAGES[0]); bindTouch(); recomputeArena();
+  document.getElementById('loading').classList.add('hidden');
+  show('title'); tick();
+}
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight); recomputeArena(); });
+addEventListener('load',()=>setTimeout(boot,300));
+</script>
+</body>
+</html>
