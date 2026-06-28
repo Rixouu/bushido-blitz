@@ -265,16 +265,28 @@ function buildStage() {
   stagesEl.innerHTML = "";
 
   STAGES.forEach((stage) => {
-    const card = document.createElement("div");
-    card.className = "stage-card";
-    if (stage.background) {
-      card.style.backgroundImage = `url("${stage.background}")`;
-      card.style.backgroundSize = "cover";
-      card.style.backgroundPosition = "center";
-    } else {
-      card.style.background = `linear-gradient(180deg,#${stage.sky.toString(16).padStart(6, "0")},#${stage.ground.toString(16).padStart(6, "0")})`;
-    }
-    card.innerHTML = `<div class="stage-name">${stage.name}</div>`;
+    const card = document.createElement("button");
+    card.type = "button";
+    card.className = `stage-card stage-card--${stage.id}`;
+    card.setAttribute("aria-label", stage.name);
+    const previewMarkup = stage.background
+      ? `<img class="stage-card__image" src="${stage.background}" alt="" aria-hidden="true" />`
+      : "";
+    const previewStyle = stage.background
+      ? ""
+      : `background:linear-gradient(180deg,#${stage.sky.toString(16).padStart(6, "0")},#${stage.ground.toString(16).padStart(6, "0")});`;
+    card.innerHTML = `
+      <img class="stage-card__frame stage-card__frame--idle" src="/elements/frame-scene.png" alt="" aria-hidden="true" />
+      <img class="stage-card__frame stage-card__frame--active" src="/elements/frame-scene-select.png" alt="" aria-hidden="true" />
+      <div class="stage-card__panel">
+        <div class="stage-card__preview" style="${previewStyle}">
+          ${previewMarkup}
+        </div>
+        <div class="stage-card__nameplate">
+          <div class="stage-name">${stage.name}</div>
+        </div>
+      </div>
+    `;
     card.addEventListener("click", () => {
       G.stage = stage;
       [...stagesEl.children].forEach((child) => child.classList.remove("selected"));
@@ -291,8 +303,9 @@ function pick(id, card) {
   const player = G.selecting;
   G.picks[player] = id;
 
-  [...rosterEl.children].forEach((child) => child.classList.remove("selected"));
-  card.classList.add("selected");
+  const playerClass = player === 1 ? "selected-p1" : "selected-p2";
+  [...rosterEl.children].forEach((child) => child.classList.remove(playerClass));
+  card.classList.add(playerClass);
 
   if (G.mode === "ai") {
     const others = ROSTER.filter((entry) => entry.id !== id);
@@ -303,10 +316,7 @@ function pick(id, card) {
 
   if (player === 1) {
     G.selecting = 2;
-    pickLabel.textContent = "Player 2 — pick your fighter";
-    window.setTimeout(() => {
-      [...rosterEl.children].forEach((child) => child.classList.remove("selected"));
-    }, 220);
+    pickLabel.textContent = "Player 2 - pick your fighter";
     return;
   }
 
@@ -318,20 +328,30 @@ function buildRoster() {
   ROSTER.forEach((fighter) => {
     const portraitFile = getAnimFile(fighter, "idle");
     const portraitDef = getAnimDef(fighter, "idle");
-    const card = document.createElement("div");
+    const card = document.createElement("button");
+    card.type = "button";
     card.className = "fighter-card";
+    card.setAttribute("aria-label", `${fighter.name}, ${fighter.archetype}`);
     card.innerHTML = `
-      <div
-        class="fighter-portrait"
-        style="
-          --portrait-frames:${portraitDef.frames};
-          --portrait-accent:#${fighter.tint.toString(16).padStart(6, "0")};
-          background-image:url('${SPRITE_BASE}/${fighter.spriteFolder}/${portraitFile}.png');
-        "
-      ></div>
-      <div class="fighter-role">${fighter.archetype}</div>
-      <div class="fighter-name">${fighter.name}</div>
-      <div class="fighter-blurb">${fighter.blurb}</div>
+      <img class="fighter-card__frame fighter-card__frame--idle" src="/elements/frame-non-active.png" alt="" aria-hidden="true" />
+      <img class="fighter-card__frame fighter-card__frame--active" src="/elements/frame-active.png" alt="" aria-hidden="true" />
+      <div class="fighter-card__panel">
+        <div class="fighter-card__top">
+          <div
+            class="fighter-portrait"
+            style="
+              --portrait-frames:${portraitDef.frames};
+              --portrait-accent:#${fighter.tint.toString(16).padStart(6, "0")};
+              background-image:url('${SPRITE_BASE}/${fighter.spriteFolder}/${portraitFile}.png');
+            "
+          ></div>
+        </div>
+        <div class="fighter-card__bottom">
+          <div class="fighter-role" style="color:#${fighter.tint.toString(16).padStart(6, "0")}">${fighter.archetype}</div>
+          <div class="fighter-name">${fighter.name}</div>
+          <div class="fighter-blurb">${fighter.blurb}</div>
+        </div>
+      </div>
     `;
     card.addEventListener("click", () => pick(fighter.id, card));
     rosterEl.appendChild(card);
@@ -341,8 +361,8 @@ function buildRoster() {
 function startSelect() {
   G.selecting = 1;
   G.picks = { 1: null, 2: null };
-  pickLabel.textContent = G.mode === "ai" ? "Pick your fighter" : "Player 1 — pick your fighter";
-  [...rosterEl.children].forEach((child) => child.classList.remove("selected"));
+  pickLabel.textContent = G.mode === "ai" ? "Pick your fighter" : "Player 1 - pick your fighter";
+  [...rosterEl.children].forEach((child) => child.classList.remove("selected-p1", "selected-p2"));
   show("select");
 }
 

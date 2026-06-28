@@ -54,23 +54,52 @@
         </span>
       </button>
       <div class="title-utility-row">
-        <button type="button" class="btn utility-btn" data-go="settings">Settings</button>
-        <button type="button" class="btn utility-btn" data-go="help">Help</button>
+        <button
+          type="button"
+          class="btn utility-btn utility-btn--settings"
+          data-go="settings"
+          aria-label="Settings"
+        >
+          <span class="utility-btn__icon utility-btn__icon--settings" aria-hidden="true"></span>
+        </button>
+        <button
+          type="button"
+          class="btn utility-btn utility-btn--help"
+          data-go="help"
+          aria-label="Help"
+        >
+          <span class="utility-btn__icon utility-btn__icon--help" aria-hidden="true"></span>
+        </button>
       </div>
     </section>
 
-    <section class="screen" id="screen-select">
-      <div class="eyebrow">Choose your fighter</div>
-      <div class="pick-label" id="pick-label">Player 1 — pick your fighter</div>
+    <section class="screen character-select-screen" id="screen-select">
+      <div class="character-select__header">
+        <img
+          class="character-select__title"
+          src="/elements/title-character-select.png"
+          alt="Character Select"
+        />
+        <div class="pick-label" id="pick-label">Player 1 - pick your fighter</div>
+      </div>
       <div class="roster" id="roster"></div>
-      <button type="button" class="btn ghost" data-go="title">Back</button>
+      <div class="character-select__footer">
+        <button type="button" class="btn ghost character-select__back" data-go="title">Back</button>
+      </div>
     </section>
 
-    <section class="screen" id="screen-stage">
-      <div class="eyebrow">The duelling ground</div>
-      <h2 class="heading">Pick the ground</h2>
+    <section class="screen scene-select-screen" id="screen-stage">
+      <div class="scene-select__header">
+        <img
+          class="scene-select__title"
+          src="/elements/title-scene-select.png"
+          alt="Scene Select"
+        />
+      </div>
       <div class="stages" id="stages"></div>
-      <button type="button" class="btn ghost" data-go="select">Back</button>
+      <div class="scene-select__footer">
+        <button type="button" class="btn ghost character-select__back" data-go="select">Back</button>
+      </div>
     </section>
 
     <section class="screen" id="screen-online">
