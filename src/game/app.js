@@ -166,8 +166,8 @@ function setupSources() {
 }
 
 function beginRound() {
-  F[1].reset(-3.2);
-  F[2].reset(3.2);
+  F[1].reset(-CFG.spawnX);
+  F[2].reset(CFG.spawnX);
   renderStam();
   updateHP();
 
@@ -246,11 +246,14 @@ function startFight(isRematch) {
 
   F[1] = new Fighter(roster1, 1, fx);
   F[2] = new Fighter(roster2, -1, fx);
+  const stage = G.stage || STAGES[0];
+  F[1].setGroundOffset(CFG.fighterGroundOffset);
+  F[2].setGroundOffset(CFG.fighterGroundOffset);
 
   hudRefs.p1name.textContent = roster1.name;
   hudRefs.p2name.textContent = roster2.name;
 
-  applyStage(G.stage || STAGES[0]);
+  applyStage(stage);
   setupSources();
   G.edges = { 1: makeEdge(), 2: makeEdge() };
   renderPips();

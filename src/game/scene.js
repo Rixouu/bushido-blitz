@@ -10,10 +10,12 @@ renderer.domElement.style.cssText = "position:absolute;inset:0;z-index:1";
 app.prepend(renderer.domElement);
 
 export const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0xe2dcc8, 14, 36);
 
 export const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
 export const CAM_BASE = new THREE.Vector3(0, 2.7, 12.5);
+const BG_ASPECT = 2;
+const BG_Z = -14;
+const BG_Y = 0.3;
 camera.position.copy(CAM_BASE);
 camera.lookAt(0, 1.7, 0);
 
@@ -25,12 +27,14 @@ scene.add(sun);
 const groundMat = new THREE.MeshStandardMaterial({ color: 0x9a8f78, roughness: 1 });
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(60, 40), groundMat);
 ground.rotation.x = -Math.PI / 2;
+ground.visible = false;
 scene.add(ground);
 
-const skyMat = new THREE.MeshBasicMaterial({ color: 0xcfc9b8 });
-const sky = new THREE.Mesh(new THREE.PlaneGeometry(80, 30), skyMat);
-sky.position.set(0, 8, -16);
-scene.add(sky);
+const bgMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+bgMat.fog = false;
+const backgroundPlane = new THREE.Mesh(new THREE.PlaneGeometry(2, 1), bgMat);
+backgroundPlane.position.set(0, BG_Y, BG_Z);
+scene.add(backgroundPlane);
 const bgLoader = new THREE.TextureLoader();
 const bgCache = new Map();
 
@@ -38,6 +42,18 @@ const props = new THREE.Group();
 scene.add(props);
 
 let shake = 0;
+
+function fitBackgroundPlane() {
+  const dist = camera.position.z - BG_Z;
+  const vFov = THREE.MathUtils.degToRad(camera.fov);
+  const visibleHeight = 2 * Math.tan(vFov / 2) * dist;
+  const visibleWidth = visibleHeight * camera.aspect;
+  const planeWidth = Math.max(visibleWidth, visibleHeight * BG_ASPECT);
+  const planeHeight = planeWidth / BG_ASPECT;
+
+  backgroundPlane.scale.set(planeWidth / 2, planeHeight, 1);
+  backgroundPlane.position.set(CAM_BASE.x, BG_Y, BG_Z);
+}
 
 function clearProps() {
   const geometries = new Set();
@@ -223,24 +239,31 @@ export function buildProps(stage) {
 }
 
 export function applyStage(stage) {
-  skyMat.color.setHex(stage.sky);
   groundMat.color.setHex(stage.ground);
-  scene.fog.color.setHex(stage.haze);
   renderer.setClearColor(stage.sky, 1);
-  buildProps(stage);
+  fitBackgroundPlane();
 
   if (stage.background) {
     let texture = bgCache.get(stage.background);
     if (!texture) {
       texture = bgLoader.load(stage.background);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.magFilter = THREE.NearestFilter;
+      texture.minFilter = THREE.NearestFilter;
+      texture.generateMipmaps = false;
       bgCache.set(stage.background, texture);
     }
-    skyMat.map = texture;
-    skyMat.color.setHex(0xffffff);
+    bgMat.map = texture;
+    backgroundPlane.visible = true;
+    ground.visible = false;
+    clearProps();
   } else {
-    skyMat.map = null;
+    bgMat.map = null;
+    backgroundPlane.visible = false;
+    ground.visible = true;
+    buildProps(stage);
   }
-  skyMat.needsUpdate = true;
+  bgMat.needsUpdate = true;
 }
 
 export function punch(value) {
@@ -261,6 +284,7 @@ export function stepCamera(midpoint) {
 
   camera.position.z = CAM_BASE.z;
   camera.lookAt(0, 1.7, 0);
+  backgroundPlane.position.x = camera.position.x;
 }
 
 export function renderScene() {
@@ -279,5 +303,6 @@ export function resizeScene() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  fitBackgroundPlane();
   recomputeArena();
 }

@@ -13,17 +13,20 @@ export class Fighter {
     this.placeholderTex = makePlaceholder(roster.emoji, roster.tint);
     const material = new THREE.MeshBasicMaterial({ map: this.placeholderTex, transparent: true });
     const aspect = FRAME_H / FRAME_W;
-    this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 2.3 * aspect), material);
-    this.baseY = 1.45;
+    const planeHeight = 2.3 * aspect;
+    this.visualScale = this.r.visualScale || 1;
+    this.mesh = new THREE.Mesh(new THREE.PlaneGeometry(2.3, planeHeight), material);
+    this.baseY = 1.85 + (planeHeight * (this.visualScale - 1)) / 2;
+    this.groundOffset = 0;
     this.mesh.position.y = this.baseY;
     scene.add(this.mesh);
 
-    this.anim = "idle";
+    this.anim = "";
     this.frame = 0;
     this.frameT = 0;
     this.animDone = false;
 
-    this.reset(facing > 0 ? -3.2 : 3.2);
+    this.reset(facing > 0 ? -CFG.spawnX : CFG.spawnX);
   }
 
   reset(x) {
@@ -48,8 +51,14 @@ export class Fighter {
 
   sync() {
     this.mesh.position.x = this.x;
-    this.mesh.position.y = this.baseY + this.y;
-    this.mesh.scale.x = this.facing * Math.abs(this.mesh.scale.x || 1);
+    this.mesh.position.y = this.baseY + this.groundOffset + this.y;
+    this.mesh.scale.x = this.facing * this.visualScale;
+    this.mesh.scale.y = this.visualScale;
+  }
+
+  setGroundOffset(offset = 0) {
+    this.groundOffset = offset;
+    this.sync();
   }
 
   play(name) {
@@ -259,9 +268,9 @@ export class Fighter {
 
     if (ASSET_MODE === "placeholder") {
       if (this.state === "idle") {
-        this.mesh.position.y = this.baseY + this.y + Math.sin(this.stateT * 3) * 0.03;
+        this.mesh.position.y = this.baseY + this.groundOffset + this.y + Math.sin(this.stateT * 3) * 0.03;
       } else {
-        this.mesh.position.y = this.baseY + this.y;
+        this.mesh.position.y = this.baseY + this.groundOffset + this.y;
       }
 
       let targetRot = 0;
@@ -279,7 +288,7 @@ export class Fighter {
       }
       this.mesh.rotation.z = THREE.MathUtils.lerp(this.mesh.rotation.z, targetRot, this.dead ? 0.1 : 0.3);
     } else {
-      this.mesh.position.y = this.baseY + this.y;
+      this.mesh.position.y = this.baseY + this.groundOffset + this.y;
       this.mesh.rotation.z = 0;
     }
 
