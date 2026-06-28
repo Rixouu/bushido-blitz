@@ -1349,7 +1349,7 @@ h2.heading {
 
   .character-select__footer {
     position: absolute;
-    top: 12px;
+    top: 16px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 2;
@@ -1358,20 +1358,20 @@ h2.heading {
     padding-top: 0;
     display: flex;
     justify-content: flex-start;
-    padding-left: 0;
+    padding-left: 7px;
     box-sizing: border-box;
   }
 
   .btn.ghost.character-select__back {
     width: 126px;
     min-width: 126px;
-    min-height: 38px;
-    background: url("/elements/cta-back.png") center 58% / 116% auto no-repeat;
+    min-height: 42px;
+    background: url("/elements/cta-back.png") center 62% / 112% auto no-repeat;
     background-color: transparent;
   }
 
   .btn.ghost.character-select__back:hover {
-    background: url("/elements/cta-back.png") center 58% / 116% auto no-repeat;
+    background: url("/elements/cta-back.png") center 62% / 112% auto no-repeat;
     background-color: transparent;
     border-color: transparent;
   }
