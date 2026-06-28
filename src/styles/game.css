@@ -1365,13 +1365,13 @@ h2.heading {
   .btn.ghost.character-select__back {
     width: 126px;
     min-width: 126px;
-    min-height: 42px;
-    background: url("/elements/cta-back.png") center 62% / 112% auto no-repeat;
+    min-height: 46px;
+    background: url("/elements/cta-back.png") center 64% / 104% auto no-repeat;
     background-color: transparent;
   }
 
   .btn.ghost.character-select__back:hover {
-    background: url("/elements/cta-back.png") center 62% / 112% auto no-repeat;
+    background: url("/elements/cta-back.png") center 64% / 104% auto no-repeat;
     background-color: transparent;
     border-color: transparent;
   }
