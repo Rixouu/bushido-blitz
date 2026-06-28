@@ -347,8 +347,8 @@ function buildRoster() {
           ></div>
         </div>
         <div class="fighter-card__bottom">
-          <div class="fighter-role" style="color:#${fighter.tint.toString(16).padStart(6, "0")}">${fighter.archetype}</div>
           <div class="fighter-name">${fighter.name}</div>
+          <div class="fighter-role" style="color:#${fighter.tint.toString(16).padStart(6, "0")}">${fighter.archetype}</div>
           <div class="fighter-blurb">${fighter.blurb}</div>
         </div>
       </div>
