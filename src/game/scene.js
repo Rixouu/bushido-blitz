@@ -13,9 +13,7 @@ export const scene = new THREE.Scene();
 
 export const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
 export const CAM_BASE = new THREE.Vector3(0, 2.7, 12.5);
-const BG_ASPECT = 2;
-const BG_Z = -14;
-const BG_Y = 0.3;
+const BG_DISTANCE = 26.5;
 camera.position.copy(CAM_BASE);
 camera.lookAt(0, 1.7, 0);
 
@@ -32,27 +30,41 @@ scene.add(ground);
 
 const bgMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
 bgMat.fog = false;
+bgMat.toneMapped = false;
 const backgroundPlane = new THREE.Mesh(new THREE.PlaneGeometry(2, 1), bgMat);
-backgroundPlane.position.set(0, BG_Y, BG_Z);
+backgroundPlane.frustumCulled = false;
 scene.add(backgroundPlane);
 const bgLoader = new THREE.TextureLoader();
 const bgCache = new Map();
+let bgAspect = 16 / 9;
+const bgDirection = new THREE.Vector3();
 
 const props = new THREE.Group();
 scene.add(props);
 
 let shake = 0;
 
-function fitBackgroundPlane() {
-  const dist = camera.position.z - BG_Z;
+function syncBackgroundPlane() {
+  const dist = BG_DISTANCE;
   const vFov = THREE.MathUtils.degToRad(camera.fov);
   const visibleHeight = 2 * Math.tan(vFov / 2) * dist;
   const visibleWidth = visibleHeight * camera.aspect;
-  const planeWidth = Math.max(visibleWidth, visibleHeight * BG_ASPECT);
-  const planeHeight = planeWidth / BG_ASPECT;
+  let planeWidth = visibleWidth;
+  let planeHeight = planeWidth / bgAspect;
 
+  if (planeHeight < visibleHeight) {
+    planeHeight = visibleHeight;
+    planeWidth = planeHeight * bgAspect;
+  }
+
+  camera.getWorldDirection(bgDirection);
+  backgroundPlane.position.copy(camera.position).addScaledVector(bgDirection, dist);
+  backgroundPlane.quaternion.copy(camera.quaternion);
   backgroundPlane.scale.set(planeWidth / 2, planeHeight, 1);
-  backgroundPlane.position.set(CAM_BASE.x, BG_Y, BG_Z);
+}
+
+function fitBackgroundPlane() {
+  syncBackgroundPlane();
 }
 
 function clearProps() {
@@ -246,12 +258,18 @@ export function applyStage(stage) {
   if (stage.background) {
     let texture = bgCache.get(stage.background);
     if (!texture) {
-      texture = bgLoader.load(stage.background);
+      texture = bgLoader.load(stage.background, (loadedTexture) => {
+        bgAspect = loadedTexture.image.width / loadedTexture.image.height;
+        syncBackgroundPlane();
+      });
       texture.colorSpace = THREE.SRGBColorSpace;
-      texture.magFilter = THREE.NearestFilter;
-      texture.minFilter = THREE.NearestFilter;
-      texture.generateMipmaps = false;
+      texture.magFilter = THREE.LinearFilter;
+      texture.minFilter = THREE.LinearFilter;
+      texture.generateMipmaps = true;
       bgCache.set(stage.background, texture);
+    }
+    if (texture.image) {
+      bgAspect = texture.image.width / texture.image.height;
     }
     bgMat.map = texture;
     backgroundPlane.visible = true;
@@ -284,7 +302,7 @@ export function stepCamera(midpoint) {
 
   camera.position.z = CAM_BASE.z;
   camera.lookAt(0, 1.7, 0);
-  backgroundPlane.position.x = camera.position.x;
+  syncBackgroundPlane();
 }
 
 export function renderScene() {

@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "pack:sprites": "node scripts/pack-craftpix-strips.mjs"
+    "pack:sprites": "node scripts/pack-craftpix-strips.mjs",
+    "generate:pwa-assets": "node scripts/generate-pwa-assets.mjs"
   },
   "dependencies": {
     "three": "^0.166.1"

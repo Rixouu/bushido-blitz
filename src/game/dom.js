@@ -12,6 +12,8 @@ export const screens = {
   select: document.getElementById("screen-select"),
   stage: document.getElementById("screen-stage"),
   online: document.getElementById("screen-online"),
+  settings: document.getElementById("screen-settings"),
+  help: document.getElementById("screen-help"),
   result: document.getElementById("screen-result"),
 };
 

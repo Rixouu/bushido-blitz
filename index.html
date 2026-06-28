@@ -3,7 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta
+    name="description"
+    content="Pixel-art samurai dueling game with a 12-fighter roster, best-of-three rounds, and drinking-game rules."
+  />
+  <meta name="theme-color" content="#160B0A" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Bushido Blitz" />
   <title>BUSHIDO BLITZ — a melee duel</title>
+  <link rel="icon" href="/favicon.png" type="image/png" />
+  <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
+  <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+  <link rel="manifest" href="/site.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -15,19 +29,34 @@
   <div id="app">
     <div id="loading"><div class="spinner"></div><div>Sharpening steel...</div></div>
 
-    <section class="screen" id="screen-title">
-      <div class="eyebrow">A melee duel</div>
-      <h1 class="title">BUSHIDO<br />BLITZ</h1>
-      <p class="tagline">Read · Strike · Parry · Punish</p>
-      <div class="mode-row">
-        <button type="button" class="btn" data-mode="local">2 Players · same keyboard</button>
-        <button type="button" class="btn ghost" data-mode="ai">1 Player · vs AI</button>
+    <section class="screen title-screen" id="screen-title">
+      <img class="title-logo" src="/title-bushido-blitz.png" alt="Bushido Blitz" />
+      <div class="mode-row title-mode-row">
+        <button type="button" class="btn mode-btn mode-btn-primary" data-mode="local">
+          <span class="mode-btn__badge" aria-hidden="true"></span>
+          <span class="mode-btn__copy">
+            <span class="mode-btn__title">2 Players</span>
+            <span class="mode-btn__subtitle">Same Keyboard</span>
+          </span>
+        </button>
+        <button type="button" class="btn mode-btn mode-btn-secondary" data-mode="ai">
+          <span class="mode-btn__badge mode-btn__badge-ai" aria-hidden="true"></span>
+          <span class="mode-btn__copy">
+            <span class="mode-btn__title">1 Player</span>
+            <span class="mode-btn__subtitle">vs AI</span>
+          </span>
+        </button>
       </div>
-      <button type="button" class="btn ghost small" data-mode="online">Play on separate phones</button>
-      <p class="soon-note">
-        Same-keyboard and vs-AI play work right now with no setup. Phone-vs-phone is wired to drop in later
-        — see the join screen.
-      </p>
+      <button type="button" class="btn mode-btn mode-btn-online" data-mode="online">
+        <span class="mode-btn__badge mode-btn__badge-phone" aria-hidden="true"></span>
+        <span class="mode-btn__copy">
+          <span class="mode-btn__title">Play on Separate Phones</span>
+        </span>
+      </button>
+      <div class="title-utility-row">
+        <button type="button" class="btn utility-btn" data-go="settings">Settings</button>
+        <button type="button" class="btn utility-btn" data-go="help">Help</button>
+      </div>
     </section>
 
     <section class="screen" id="screen-select">
@@ -54,6 +83,30 @@
       </p>
       <button type="button" class="btn" data-mode="local">Play local instead</button>
       <button type="button" class="btn ghost" data-go="title">Back</button>
+    </section>
+
+    <section class="screen" id="screen-settings">
+      <div class="eyebrow">Menu settings</div>
+      <div class="menu-panel">
+        <h2 class="heading">Settings</h2>
+        <p class="soon-note">
+          The full settings panel is still to come. For now, the game is tuned for quick local duels with the
+          current visuals, controls, and round rules.
+        </p>
+        <button type="button" class="btn ghost" data-go="title">Back</button>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-help">
+      <div class="eyebrow">Before the duel</div>
+      <div class="menu-panel">
+        <h2 class="heading">Help</h2>
+        <p class="soon-note">
+          Pick a mode, choose your fighter, then battle in a best-of-three duel. Local mode uses one keyboard,
+          while the phone option is reserved for a later relay-based multiplayer update.
+        </p>
+        <button type="button" class="btn ghost" data-go="title">Back</button>
+      </div>
     </section>
 
     <section class="screen" id="screen-result">
