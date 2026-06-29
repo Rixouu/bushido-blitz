@@ -32,6 +32,7 @@ export class Fighter {
     const material = new THREE.MeshBasicMaterial({
       map: this.placeholderTex,
       transparent: true,
+      alphaTest: 0.5,
       toneMapped: false,
     });
     const aspect = FRAME_H / FRAME_W;
