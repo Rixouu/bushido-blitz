@@ -3,6 +3,7 @@ export const hud = document.getElementById("hud");
 export const loadingEl = document.getElementById("loading");
 export const landscapeGateEl = document.getElementById("landscape-gate");
 export const landscapeGateButton = document.getElementById("landscape-gate-button");
+export const landscapeGateCopy = document.getElementById("landscape-gate-copy");
 export const rosterEl = document.getElementById("roster");
 export const pickLabel = document.getElementById("pick-label");
 export const stagesEl = document.getElementById("stages");

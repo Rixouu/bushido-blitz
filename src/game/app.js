@@ -1,6 +1,6 @@
 import { CFG, ROSTER, SPRITE_BASE, STAGES, getAnimDef, getAnimFile } from "./config.js";
 import {
-  hud, hudRefs, landscapeGateButton, landscapeGateEl, loadingEl, pickLabel, rosterEl, screens, sipCallEl, stagesEl, verdictEl,
+  hud, hudRefs, landscapeGateButton, landscapeGateCopy, landscapeGateEl, loadingEl, pickLabel, rosterEl, screens, sipCallEl, stagesEl, verdictEl,
 } from "./dom.js";
 import { Fighter } from "./fighter.js";
 import { AISource, KeyboardSource, TouchSource, blankInput } from "./input.js";
@@ -11,14 +11,14 @@ import { isLandscapeViewport, isMobileTouchViewport } from "./viewport.js";
 const STEP = 1 / 60;
 let acc = 0;
 let lastFrame = performance.now();
-let mobileLandscapeRequired = false;
+let landscapeAutoSwitchFailed = false;
 
 function isMobilePortrait() {
   return isMobileTouchViewport() && !isLandscapeViewport();
 }
 
 function shouldShowLandscapeGate() {
-  return mobileLandscapeRequired && isMobilePortrait();
+  return isMobilePortrait();
 }
 
 function updateLandscapeGate() {
@@ -27,14 +27,32 @@ function updateLandscapeGate() {
   }
 
   const active = shouldShowLandscapeGate();
+  if (!active) {
+    landscapeAutoSwitchFailed = false;
+  }
   landscapeGateEl.classList.toggle("hidden", !active);
   landscapeGateEl.setAttribute("aria-hidden", String(!active));
+  if (landscapeGateCopy) {
+    landscapeGateCopy.textContent = landscapeAutoSwitchFailed
+      ? "Your browser did not switch automatically. Turn your phone sideways to continue."
+      : "Bushido Blitz runs in landscape on mobile. Turn your phone sideways to continue.";
+  }
+  if (landscapeGateButton) {
+    landscapeGateButton.disabled = landscapeAutoSwitchFailed;
+    landscapeGateButton.textContent = landscapeAutoSwitchFailed ? "Rotate Phone" : "Try Landscape";
+  }
 }
 
 async function requestLandscapeLock() {
   if (!shouldShowLandscapeGate()) {
     updateLandscapeGate();
     return;
+  }
+
+  if (document.fullscreenEnabled && !document.fullscreenElement) {
+    try {
+      await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+    } catch {}
   }
 
   const orientationTarget = globalThis.screen?.orientation;
@@ -56,11 +74,7 @@ async function requestLandscapeLock() {
     await Promise.resolve(result);
   } catch {}
 
-  updateLandscapeGate();
-}
-
-function requireLandscapeForMode(mode) {
-  mobileLandscapeRequired = isMobileTouchViewport() && (mode === "local" || mode === "ai");
+  landscapeAutoSwitchFailed = shouldShowLandscapeGate();
   updateLandscapeGate();
 }
 
@@ -92,7 +106,6 @@ function show(name) {
 }
 
 function goTitle() {
-  mobileLandscapeRequired = false;
   G.scores = { 1: 0, 2: 0 };
   G.picks = { 1: null, 2: null };
   G.selecting = 1;
@@ -449,17 +462,13 @@ function bindUi() {
   });
 
   document.querySelectorAll("[data-mode]").forEach((button) => {
-    button.addEventListener("click", async () => {
+    button.addEventListener("click", () => {
       const { mode } = button.dataset;
       if (mode === "online") {
-        mobileLandscapeRequired = false;
-        updateLandscapeGate();
         show("online");
         return;
       }
       G.mode = mode;
-      requireLandscapeForMode(mode);
-      await requestLandscapeLock();
       startSelect();
     });
   });
