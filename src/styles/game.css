@@ -980,21 +980,26 @@ h2.heading {
   opacity: 1;
 }
 
-.fighter-card__frame--active {
+.fighter-card__frame--active-p1,
+.fighter-card__frame--active-p2 {
   opacity: 0;
 }
 
-.fighter-card:hover .fighter-card__frame--idle,
-.fighter-card:focus-visible .fighter-card__frame--idle,
+.roster[data-selecting-player="1"] .fighter-card:not(.selected-p1):not(.selected-p2):hover .fighter-card__frame--idle,
+.roster[data-selecting-player="1"] .fighter-card:not(.selected-p1):not(.selected-p2):focus-visible .fighter-card__frame--idle,
+.roster[data-selecting-player="2"] .fighter-card:not(.selected-p1):not(.selected-p2):hover .fighter-card__frame--idle,
+.roster[data-selecting-player="2"] .fighter-card:not(.selected-p1):not(.selected-p2):focus-visible .fighter-card__frame--idle,
 .fighter-card.selected-p1 .fighter-card__frame--idle,
 .fighter-card.selected-p2 .fighter-card__frame--idle {
   opacity: 0;
 }
 
-.fighter-card:hover .fighter-card__frame--active,
-.fighter-card:focus-visible .fighter-card__frame--active,
-.fighter-card.selected-p1 .fighter-card__frame--active,
-.fighter-card.selected-p2 .fighter-card__frame--active {
+.roster[data-selecting-player="1"] .fighter-card:not(.selected-p1):not(.selected-p2):hover .fighter-card__frame--active-p1,
+.roster[data-selecting-player="1"] .fighter-card:not(.selected-p1):not(.selected-p2):focus-visible .fighter-card__frame--active-p1,
+.fighter-card.selected-p1 .fighter-card__frame--active-p1,
+.roster[data-selecting-player="2"] .fighter-card:not(.selected-p1):not(.selected-p2):hover .fighter-card__frame--active-p2,
+.roster[data-selecting-player="2"] .fighter-card:not(.selected-p1):not(.selected-p2):focus-visible .fighter-card__frame--active-p2,
+.fighter-card.selected-p2 .fighter-card__frame--active-p2 {
   opacity: 1;
 }
 

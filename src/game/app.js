@@ -12,6 +12,10 @@ const STEP = 1 / 60;
 let acc = 0;
 let lastFrame = performance.now();
 
+function syncRosterSelectingPlayer(player) {
+  rosterEl.dataset.selectingPlayer = String(player);
+}
+
 function show(name) {
   G.screen = name;
   Object.values(screens).forEach((screen) => screen.classList.remove("active"));
@@ -28,6 +32,7 @@ function goTitle() {
   G.scores = { 1: 0, 2: 0 };
   G.picks = { 1: null, 2: null };
   G.selecting = 1;
+  syncRosterSelectingPlayer(1);
   show("title");
 }
 
@@ -309,6 +314,7 @@ function pick(id, card) {
 
   if (player === 1) {
     G.selecting = 2;
+    syncRosterSelectingPlayer(2);
     pickLabel.textContent = "Player 2 - pick your fighter";
     return;
   }
@@ -327,7 +333,8 @@ function buildRoster() {
     card.setAttribute("aria-label", `${fighter.name}, ${fighter.archetype}`);
     card.innerHTML = `
       <img class="fighter-card__frame fighter-card__frame--idle" src="/elements/frame-non-active.png" alt="" aria-hidden="true" />
-      <img class="fighter-card__frame fighter-card__frame--active" src="/elements/frame-active.png" alt="" aria-hidden="true" />
+      <img class="fighter-card__frame fighter-card__frame--active-p1" src="/elements/frame-active1.png" alt="" aria-hidden="true" />
+      <img class="fighter-card__frame fighter-card__frame--active-p2" src="/elements/frame-active2.png" alt="" aria-hidden="true" />
       <div class="fighter-card__panel">
         <div class="fighter-card__top">
           <div
@@ -349,10 +356,12 @@ function buildRoster() {
     card.addEventListener("click", () => pick(fighter.id, card));
     rosterEl.appendChild(card);
   });
+  syncRosterSelectingPlayer(G.selecting || 1);
 }
 
 function startSelect() {
   G.selecting = 1;
+  syncRosterSelectingPlayer(1);
   G.picks = { 1: null, 2: null };
   pickLabel.textContent = G.mode === "ai" ? "Pick your fighter" : "Player 1 - pick your fighter";
   [...rosterEl.children].forEach((child) => child.classList.remove("selected-p1", "selected-p2"));

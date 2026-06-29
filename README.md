@@ -138,7 +138,7 @@ The current menu and HUD presentation uses these asset groups:
 
 - `public/elements/screen-background.png` for the selection-screen backdrop
 - `public/elements/title-character-select.png` and `public/elements/title-scene-select.png` for the menu titles
-- `public/elements/frame-active.png`, `frame-non-active.png`, `frame-scene.png`, and `frame-scene-select.png` for card frames and selection states
+- `public/elements/frame-active1.png`, `frame-active2.png`, `frame-non-active.png`, `frame-scene.png`, and `frame-scene-select.png` for card frames and selection states
 - `public/elements/cta.png` and `cta-back.png` for the call-to-action and back buttons
 - `public/elements/timer.png` for the HUD timer frame
 - `public/title-bushido-blitz.png`, `public/icon.png`, and the favicon/app icon set for branding and install surfaces
