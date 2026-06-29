@@ -38,6 +38,16 @@ body {
   inset: 0;
 }
 
+body.simulated-landscape #app {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: 100vh;
+  height: 100vw;
+  transform: translate(-50%, -50%) rotate(90deg);
+  transform-origin: center center;
+}
+
 canvas {
   display: block;
   width: 100%;
@@ -632,6 +642,30 @@ h2.heading {
     width: 34px;
     min-height: 34px;
     height: 34px;
+  }
+}
+
+@media (max-width: 520px) and (orientation: portrait) and (pointer: coarse) {
+  .title-screen {
+    padding-top: 92px;
+    padding-bottom: 32px;
+  }
+
+  .title-logo {
+    margin-top: clamp(56px, 11vh, 112px);
+    max-height: 23vh;
+  }
+
+  .title-mode-row {
+    margin-top: clamp(38px, 8.5vh, 72px);
+  }
+
+  .mode-btn-online {
+    margin-top: 14px;
+  }
+
+  .title-utility-row {
+    top: 28px;
   }
 }
 
@@ -1380,8 +1414,14 @@ h2.heading {
     width: 84%;
   }
 
+  .scene-select__header {
+    margin-bottom: 2px;
+  }
+
   .scene-select__title {
-    width: min(72vw, 390px);
+    width: auto;
+    height: clamp(100px, 16vw, 120px);
+    transform: translateY(-4px);
   }
 
   .stages {
@@ -1484,7 +1524,8 @@ h2.heading {
     font-size: 5px;
   }
 
-  .character-select__footer {
+  .character-select__footer,
+  .scene-select__footer {
     position: absolute;
     top: 16px;
     left: 50%;
@@ -1499,7 +1540,8 @@ h2.heading {
     box-sizing: border-box;
   }
 
-  .btn.ghost.character-select__back {
+  .btn.ghost.character-select__back,
+  .btn.ghost.scene-select__back {
     width: 126px;
     min-width: 126px;
     min-height: 46px;
@@ -1507,36 +1549,39 @@ h2.heading {
     background-color: transparent;
   }
 
-  .btn.ghost.character-select__back:hover {
+  .btn.ghost.character-select__back:hover,
+  .btn.ghost.scene-select__back:hover {
     background: url("/elements/cta-back.png") center 64% / 104% auto no-repeat;
     background-color: transparent;
     border-color: transparent;
   }
 
-  .scene-select__header {
-    margin-bottom: -8px;
+  .scene-select__title {
+    width: auto;
+    height: 82px;
+    transform: translateY(-6px);
   }
 
-  .scene-select__title {
-    width: min(24vw, 190px);
+  .scene-select__header {
+    margin-bottom: -10px;
   }
 
   .stages {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     column-gap: 0;
     row-gap: 0;
-    width: min(82%, 700px);
+    width: min(78%, 660px);
     margin-inline: auto;
   }
 
   .stage-card {
-    width: 88%;
-    aspect-ratio: 1.42 / 1;
+    width: 86%;
+    aspect-ratio: 1.5 / 1;
     justify-self: center;
   }
 
   .stage-card:nth-child(n + 5) {
-    margin-top: -16px;
+    margin-top: -20px;
   }
 
   .stage-card__panel {
@@ -1611,20 +1656,6 @@ h2.heading {
     object-position: center 42%;
   }
 
-  .scene-select__footer {
-    position: absolute;
-    top: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 2;
-    width: min(82%, 700px);
-    margin-top: 0;
-    padding-top: 0;
-    display: flex;
-    justify-content: flex-start;
-    padding-left: 7px;
-    box-sizing: border-box;
-  }
 }
 
 @media (max-width: 520px) {
@@ -1727,7 +1758,8 @@ h2.heading {
     max-width: 82%;
   }
 
-  .character-select__footer {
+  .character-select__footer,
+  .scene-select__footer {
     width: min(100%, 320px);
     margin-inline: auto;
     padding-top: 10px;
@@ -1735,7 +1767,8 @@ h2.heading {
     justify-content: flex-start;
   }
 
-  .btn.ghost.character-select__back {
+  .btn.ghost.character-select__back,
+  .btn.ghost.scene-select__back {
     width: 148px;
     min-width: 148px;
     min-height: 32px;
@@ -1743,12 +1776,10 @@ h2.heading {
     background-color: transparent;
   }
 
-  .scene-select__header {
-    margin-bottom: 8px;
-  }
-
   .scene-select__title {
-    width: min(88vw, 300px);
+    width: auto;
+    height: 96px;
+    transform: translateY(-4px);
   }
 
   .stages {

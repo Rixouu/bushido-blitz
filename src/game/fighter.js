@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { ASSET_MODE, CFG, FRAME_H, FRAME_W, getAnimDef, resolveAnimName } from "./config.js";
 import { scene } from "./scene.js";
 import { loadSheet, makePlaceholder } from "./sprites.js";
+import { isLandscapeViewport, isMobileTouchViewport } from "./viewport.js";
 
 const DESKTOP_FIGHTER_VISUAL_BOOST = 1.32;
 const MOBILE_FIGHTER_VISUAL_BOOST = 1.38;
@@ -11,8 +12,8 @@ const FIGHTER_COLLISION_RADIUS = 0.64;
 const FIGHTER_COLLISION_SCALE_GAIN = 0.25;
 
 function getFighterVisualBoost() {
-  const isTouchDevice = window.matchMedia("(pointer: coarse)").matches;
-  const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+  const isTouchDevice = isMobileTouchViewport();
+  const isLandscape = isLandscapeViewport();
   if (isTouchDevice && isLandscape) {
     return MOBILE_LANDSCAPE_FIGHTER_VISUAL_BOOST;
   }

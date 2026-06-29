@@ -2,16 +2,18 @@ import * as THREE from "three";
 
 import { CFG } from "./config.js";
 import { app } from "./dom.js";
+import { getViewportSize } from "./viewport.js";
 
+const initialViewport = getViewportSize();
 export const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setSize(initialViewport.width, initialViewport.height);
 renderer.domElement.style.cssText = "position:absolute;inset:0;z-index:1";
 app.prepend(renderer.domElement);
 
 export const scene = new THREE.Scene();
 
-export const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 100);
+export const camera = new THREE.PerspectiveCamera(40, initialViewport.width / initialViewport.height, 0.1, 100);
 export const CAM_BASE = new THREE.Vector3(0, 2.7, 12.5);
 const BG_DISTANCE = 26.5;
 camera.position.copy(CAM_BASE);
@@ -318,9 +320,10 @@ export function recomputeArena() {
 }
 
 export function resizeScene() {
-  camera.aspect = window.innerWidth / window.innerHeight;
+  const viewport = getViewportSize();
+  camera.aspect = viewport.width / viewport.height;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(viewport.width, viewport.height);
   fitBackgroundPlane();
   recomputeArena();
 }

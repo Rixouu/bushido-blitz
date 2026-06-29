@@ -16,34 +16,36 @@ import { Fighter } from "./fighter.js";
 import { AISource, KeyboardSource, TouchSource, blankInput } from "./input.js";
 import { applyStage, punch, recomputeArena, renderScene, renderer, resizeScene, stepCamera } from "./scene.js";
 import { F, G, makeEdge } from "./state.js";
+import {
+  getViewportSize,
+  isLandscapeViewport,
+  isMobileTouchViewport,
+  isSimulatedLandscape,
+  mapViewportPoint,
+  setSimulatedLandscape,
+  shouldPromptForLandscape,
+  syncLandscapeMode,
+} from "./viewport.js";
 
 const STEP = 1 / 60;
 let acc = 0;
 let lastFrame = performance.now();
 let orientationLockRequest = null;
 
-function isMobileTouchDevice() {
-  return window.matchMedia("(pointer: coarse)").matches && navigator.maxTouchPoints > 0;
-}
-
-function isPortraitMobile() {
-  return isMobileTouchDevice() && window.matchMedia("(orientation: portrait)").matches;
-}
-
 function updateOrientationLockUi() {
   if (!orientationLockEl) {
     return;
   }
 
-  const active = isPortraitMobile();
+  const active = shouldPromptForLandscape();
   orientationLockEl.classList.toggle("hidden", !active);
   orientationLockEl.setAttribute("aria-hidden", String(!active));
 }
 
 async function requestLandscapeLock() {
-  if (!isPortraitMobile()) {
+  if (!shouldPromptForLandscape()) {
     updateOrientationLockUi();
-    return false;
+    return isLandscapeViewport();
   }
 
   if (orientationLockRequest) {
@@ -60,29 +62,55 @@ async function requestLandscapeLock() {
         }
       }
 
-      const lockOrientation = globalThis.screen?.orientation?.lock;
+      const orientationTarget = globalThis.screen?.orientation;
+      const lockOrientation =
+        orientationTarget?.lock ??
+        globalThis.screen?.lockOrientation ??
+        globalThis.screen?.mozLockOrientation ??
+        globalThis.screen?.msLockOrientation;
+
       if (typeof lockOrientation === "function") {
         try {
-          await lockOrientation.call(globalThis.screen.orientation, "landscape");
+          const result = orientationTarget
+            ? lockOrientation.call(orientationTarget, "landscape")
+            : lockOrientation.call(globalThis.screen, "landscape");
+          await Promise.resolve(result);
         } catch (error) {
           console.debug("Landscape lock unavailable", error);
         }
       }
+
+      if (shouldPromptForLandscape()) {
+        await new Promise((resolve) => window.setTimeout(resolve, 180));
+      }
+
+      if (shouldPromptForLandscape()) {
+        setSimulatedLandscape(true);
+        resizeScene();
+      }
     } finally {
       orientationLockRequest = null;
+      syncLandscapeMode();
       updateOrientationLockUi();
     }
 
-    return !isPortraitMobile();
+    return isLandscapeViewport();
   })();
 
   return orientationLockRequest;
 }
 
 function bindOrientationLock() {
-  const refresh = () => updateOrientationLockUi();
+  const refresh = () => {
+    const simulatedBeforeRefresh = isSimulatedLandscape();
+    syncLandscapeMode();
+    if (simulatedBeforeRefresh !== isSimulatedLandscape()) {
+      resizeScene();
+    }
+    updateOrientationLockUi();
+  };
   const requestLock = () => {
-    if (!isPortraitMobile()) {
+    if (!shouldPromptForLandscape()) {
       refresh();
       return;
     }
@@ -92,7 +120,7 @@ function bindOrientationLock() {
 
   refresh();
 
-  if (!isMobileTouchDevice()) {
+  if (!isMobileTouchViewport()) {
     return;
   }
 
@@ -210,7 +238,7 @@ function setupSources() {
   G.sources[1]?.dispose?.();
   G.sources[2]?.dispose?.();
 
-  const touchDevice = isMobileTouchDevice();
+  const touchDevice = isMobileTouchViewport();
 
   if (touchDevice && G.mode === "local") {
     G.sources[1] = new TouchSource(1);
@@ -493,14 +521,16 @@ function bindTouch() {
     "touchstart",
     (event) => {
       for (const touch of event.changedTouches) {
-        const side = touch.clientX < window.innerWidth / 2 ? 1 : 2;
+        const point = mapViewportPoint(touch.clientX, touch.clientY);
+        const { width } = getViewportSize();
+        const side = point.x < width / 2 ? 1 : 2;
         if (G.sources[side] instanceof KeyboardSource) {
           continue;
         }
         touches[touch.identifier] = {
           side,
-          x0: touch.clientX,
-          y0: touch.clientY,
+          x0: point.x,
+          y0: point.y,
           t0: performance.now(),
         };
       }
@@ -522,8 +552,9 @@ function bindTouch() {
           continue;
         }
 
-        const dx = touch.clientX - origin.x0;
-        const dy = touch.clientY - origin.y0;
+        const point = mapViewportPoint(touch.clientX, touch.clientY);
+        const dx = point.x - origin.x0;
+        const dy = point.y - origin.y0;
         source.set({
           left: dx < -12,
           right: dx > 12,
@@ -547,8 +578,9 @@ function bindTouch() {
 
         const source = G.sources[origin.side];
         const dt = performance.now() - origin.t0;
-        const dx = touch.clientX - origin.x0;
-        const dy = touch.clientY - origin.y0;
+        const point = mapViewportPoint(touch.clientX, touch.clientY);
+        const dx = point.x - origin.x0;
+        const dy = point.y - origin.y0;
 
         if (source instanceof TouchSource) {
           if (dt < 220 && Math.abs(dx) < 16 && Math.abs(dy) < 16) {
