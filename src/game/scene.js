@@ -69,6 +69,25 @@ function fitBackgroundPlane() {
   syncBackgroundPlane();
 }
 
+function configureBackgroundTexture(texture) {
+  const image = texture?.image;
+  const width = image?.naturalWidth || image?.width || 0;
+  const height = image?.naturalHeight || image?.height || 0;
+
+  if (width <= 0 || height <= 0) {
+    return false;
+  }
+
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = true;
+  bgAspect = width / height;
+  texture.needsUpdate = true;
+  syncBackgroundPlane();
+  return true;
+}
+
 function clearProps() {
   const geometries = new Set();
   const materials = new Set();
@@ -261,18 +280,11 @@ export function applyStage(stage) {
     let texture = bgCache.get(stage.background);
     if (!texture) {
       texture = bgLoader.load(stage.background, (loadedTexture) => {
-        bgAspect = loadedTexture.image.width / loadedTexture.image.height;
-        syncBackgroundPlane();
+        configureBackgroundTexture(loadedTexture);
       });
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.magFilter = THREE.LinearFilter;
-      texture.minFilter = THREE.LinearFilter;
-      texture.generateMipmaps = true;
       bgCache.set(stage.background, texture);
     }
-    if (texture.image) {
-      bgAspect = texture.image.width / texture.image.height;
-    }
+    configureBackgroundTexture(texture);
     bgMat.map = texture;
     backgroundPlane.visible = true;
     ground.visible = false;

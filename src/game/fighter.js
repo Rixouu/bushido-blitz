@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 import { ASSET_MODE, CFG, FRAME_H, FRAME_W, getAnimDef, resolveAnimName } from "./config.js";
 import { scene } from "./scene.js";
-import { loadSheet, makePlaceholder } from "./sprites.js";
+import { getSheetFrameCount, loadSheet, makePlaceholder } from "./sprites.js";
 import { isLandscapeViewport, isMobileTouchViewport } from "./viewport.js";
 
 const DESKTOP_FIGHTER_VISUAL_BOOST = 1.32;
@@ -103,6 +103,8 @@ export class Fighter {
     if (ASSET_MODE === "sheet") {
       const tex = loadSheet(this.r, animName);
       this.mesh.material.map = tex;
+      const frameCount = getSheetFrameCount(tex, getAnimDef(this.r, animName).frames);
+      tex.repeat.set(1 / frameCount, 1);
       tex.offset.x = 0;
       this.mesh.material.needsUpdate = true;
     }
@@ -114,11 +116,16 @@ export class Fighter {
       return;
     }
 
+    const frameCount =
+      ASSET_MODE === "sheet"
+        ? getSheetFrameCount(this.mesh.material.map, def.frames)
+        : def.frames;
+
     this.frameT += dt;
     const spf = 1 / def.fps;
     while (this.frameT >= spf) {
       this.frameT -= spf;
-      if (this.frame < def.frames - 1) {
+      if (this.frame < frameCount - 1) {
         this.frame += 1;
       } else if (def.loop) {
         this.frame = 0;
@@ -130,7 +137,8 @@ export class Fighter {
     if (ASSET_MODE === "sheet") {
       const tex = this.mesh.material.map;
       if (tex) {
-        tex.offset.x = this.frame / def.frames;
+        tex.repeat.set(1 / frameCount, 1);
+        tex.offset.x = this.frame / frameCount;
       }
     }
   }

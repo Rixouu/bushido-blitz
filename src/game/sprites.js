@@ -1,27 +1,63 @@
 import * as THREE from "three";
 
-import { SPRITE_BASE, getAnimDef, getAnimFile } from "./config.js";
+import { FRAME_W, SPRITE_BASE, getAnimDef, getAnimFile } from "./config.js";
 
 const texLoader = new THREE.TextureLoader();
-const sheetCache = new Map();
+
+function detectSheetFrameCount(texture, fallbackFrames) {
+  const image = texture?.image;
+  const width = image?.naturalWidth || image?.width || 0;
+
+  if (width >= FRAME_W && width % FRAME_W === 0) {
+    return width / FRAME_W;
+  }
+
+  return fallbackFrames;
+}
+
+function configureSheetTexture(texture) {
+  const image = texture?.image;
+  const width = image?.naturalWidth || image?.width || 0;
+
+  if (width <= 0) {
+    return false;
+  }
+
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestFilter;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.needsUpdate = true;
+  return true;
+}
+
+function applySheetFrameLayout(texture, fallbackFrames) {
+  const image = texture?.image;
+  const width = image?.naturalWidth || image?.width || 0;
+  const frameCount = detectSheetFrameCount(texture, fallbackFrames);
+  texture.userData.frameCount = frameCount;
+  texture.repeat.set(1 / frameCount, 1);
+  if (width > 0) {
+    texture.needsUpdate = true;
+  }
+  return frameCount;
+}
 
 export function loadSheet(roster, anim) {
   const charId = roster.spriteFolder || roster.id;
-  const key = `${charId}/${anim}`;
-  if (sheetCache.has(key)) {
-    return sheetCache.get(key);
-  }
-
   const def = getAnimDef(roster, anim);
   const file = getAnimFile(roster, anim);
-  const tex = texLoader.load(`${SPRITE_BASE}/${charId}/${file}.png`);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.magFilter = THREE.NearestFilter;
-  tex.minFilter = THREE.NearestFilter;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.repeat.set(1 / def.frames, 1);
-  sheetCache.set(key, tex);
+  const tex = texLoader.load(`${SPRITE_BASE}/${charId}/${file}.png`, (loadedTex) => {
+    configureSheetTexture(loadedTex);
+    applySheetFrameLayout(loadedTex, def.frames);
+  });
+  configureSheetTexture(tex);
+  applySheetFrameLayout(tex, def.frames);
   return tex;
+}
+
+export function getSheetFrameCount(texture, fallbackFrames) {
+  return texture?.userData?.frameCount || fallbackFrames;
 }
 
 export function makePlaceholder(emoji, tint) {
