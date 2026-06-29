@@ -1,16 +1,78 @@
 import { CFG, ROSTER, SPRITE_BASE, STAGES, getAnimDef, getAnimFile } from "./config.js";
 import {
-  hud, hudRefs, loadingEl, pickLabel, rosterEl, screens, sipCallEl, stagesEl, verdictEl,
+  hud, hudRefs, landscapeGateButton, landscapeGateEl, loadingEl, pickLabel, rosterEl, screens, sipCallEl, stagesEl, verdictEl,
 } from "./dom.js";
 import { Fighter } from "./fighter.js";
 import { AISource, KeyboardSource, TouchSource, blankInput } from "./input.js";
 import { applyStage, punch, recomputeArena, renderScene, renderer, resizeScene, stepCamera } from "./scene.js";
 import { F, G, makeEdge } from "./state.js";
-import { isMobileTouchViewport } from "./viewport.js";
+import { isLandscapeViewport, isMobileTouchViewport } from "./viewport.js";
 
 const STEP = 1 / 60;
 let acc = 0;
 let lastFrame = performance.now();
+let mobileLandscapeRequired = false;
+
+function isMobilePortrait() {
+  return isMobileTouchViewport() && !isLandscapeViewport();
+}
+
+function shouldShowLandscapeGate() {
+  return mobileLandscapeRequired && isMobilePortrait();
+}
+
+function updateLandscapeGate() {
+  if (!landscapeGateEl) {
+    return;
+  }
+
+  const active = shouldShowLandscapeGate();
+  landscapeGateEl.classList.toggle("hidden", !active);
+  landscapeGateEl.setAttribute("aria-hidden", String(!active));
+}
+
+async function requestLandscapeLock() {
+  if (!shouldShowLandscapeGate()) {
+    updateLandscapeGate();
+    return;
+  }
+
+  const orientationTarget = globalThis.screen?.orientation;
+  const lockOrientation =
+    orientationTarget?.lock ??
+    globalThis.screen?.lockOrientation ??
+    globalThis.screen?.mozLockOrientation ??
+    globalThis.screen?.msLockOrientation;
+
+  if (typeof lockOrientation !== "function") {
+    updateLandscapeGate();
+    return;
+  }
+
+  try {
+    const result = orientationTarget
+      ? lockOrientation.call(orientationTarget, "landscape")
+      : lockOrientation.call(globalThis.screen, "landscape");
+    await Promise.resolve(result);
+  } catch {}
+
+  updateLandscapeGate();
+}
+
+function requireLandscapeForMode(mode) {
+  mobileLandscapeRequired = isMobileTouchViewport() && (mode === "local" || mode === "ai");
+  updateLandscapeGate();
+}
+
+function bindLandscapeGate() {
+  landscapeGateButton?.addEventListener("click", () => {
+    void requestLandscapeLock();
+  });
+  window.addEventListener("resize", updateLandscapeGate);
+  window.addEventListener("orientationchange", updateLandscapeGate);
+  globalThis.screen?.orientation?.addEventListener?.("change", updateLandscapeGate);
+  updateLandscapeGate();
+}
 
 function syncRosterSelectingPlayer(player) {
   rosterEl.dataset.selectingPlayer = String(player);
@@ -26,9 +88,11 @@ function show(name) {
   if (name === "fight") {
     hud.classList.add("active");
   }
+  updateLandscapeGate();
 }
 
 function goTitle() {
+  mobileLandscapeRequired = false;
   G.scores = { 1: 0, 2: 0 };
   G.picks = { 1: null, 2: null };
   G.selecting = 1;
@@ -385,13 +449,17 @@ function bindUi() {
   });
 
   document.querySelectorAll("[data-mode]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       const { mode } = button.dataset;
       if (mode === "online") {
+        mobileLandscapeRequired = false;
+        updateLandscapeGate();
         show("online");
         return;
       }
       G.mode = mode;
+      requireLandscapeForMode(mode);
+      await requestLandscapeLock();
       startSelect();
     });
   });
@@ -613,6 +681,7 @@ function tick(now = performance.now()) {
 
 export function boot() {
   lastFrame = performance.now();
+  bindLandscapeGate();
   bindUi();
   bindTouch();
   buildRoster();

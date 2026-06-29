@@ -45,6 +45,19 @@
 <body>
   <div id="app">
     <div id="loading"><div class="spinner"></div><div>Sharpening steel...</div></div>
+    <div id="landscape-gate" class="landscape-gate hidden" aria-live="polite" aria-hidden="true">
+      <div class="landscape-gate__panel">
+        <div class="landscape-gate__eyebrow">Mobile Mode</div>
+        <h2 class="landscape-gate__title">Rotate To Landscape</h2>
+        <p class="landscape-gate__copy">
+          Character select and the fight are locked to landscape on mobile. Turn your phone sideways
+          to continue.
+        </p>
+        <button type="button" class="btn landscape-gate__button" id="landscape-gate-button">
+          Try Landscape
+        </button>
+      </div>
+    </div>
 
     <section class="screen title-screen" id="screen-title">
       <img class="title-logo" src="/title-bushido-blitz.png" alt="Bushido Blitz" />
