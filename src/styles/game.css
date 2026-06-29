@@ -38,16 +38,6 @@ body {
   inset: 0;
 }
 
-body.simulated-landscape #app {
-  inset: auto;
-  top: 50%;
-  left: 50%;
-  width: 100vh;
-  height: 100vw;
-  transform: translate(-50%, -50%) rotate(90deg);
-  transform-origin: center center;
-}
-
 canvas {
   display: block;
   width: 100%;
@@ -2138,55 +2128,6 @@ h2.heading {
   letter-spacing: 0.3em;
   font-size: 13px;
   text-transform: uppercase;
-}
-
-.orientation-lock {
-  position: absolute;
-  inset: 0;
-  z-index: 60;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background:
-    radial-gradient(circle at top, rgb(205 164 60 / 18%), transparent 40%),
-    rgb(22 11 10 / 96%);
-}
-
-.orientation-lock__panel {
-  width: min(100%, 420px);
-  padding: 28px 24px;
-  border: 1px solid rgb(244 232 205 / 18%);
-  background: linear-gradient(180deg, rgb(30 18 16 / 96%), rgb(18 11 10 / 98%));
-  box-shadow: 0 24px 40px rgb(0 0 0 / 45%);
-  text-align: center;
-}
-
-.orientation-lock__eyebrow {
-  color: var(--gold);
-  font-size: 11px;
-  letter-spacing: 0.34em;
-  text-transform: uppercase;
-}
-
-.orientation-lock__title {
-  margin-top: 12px;
-  color: var(--paper);
-  font-family: var(--font-display);
-  font-size: clamp(28px, 7vw, 42px);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.orientation-lock__copy {
-  margin-top: 14px;
-  color: var(--mist);
-  font-size: 12px;
-  line-height: 1.7;
-}
-
-.orientation-lock__button {
-  margin-top: 18px;
 }
 
 .spinner {

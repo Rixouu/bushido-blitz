@@ -1,8 +1,6 @@
 export const app = document.getElementById("app");
 export const hud = document.getElementById("hud");
 export const loadingEl = document.getElementById("loading");
-export const orientationLockEl = document.getElementById("orientation-lock");
-export const orientationLockButton = document.getElementById("orientation-lock-button");
 export const rosterEl = document.getElementById("roster");
 export const pickLabel = document.getElementById("pick-label");
 export const stagesEl = document.getElementById("stages");
